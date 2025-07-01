@@ -11,27 +11,33 @@ comparator_symbols = ["most", "least"]
 score_symbols = ["score", "point", "car", "ice-cream"]
 
 free_models = ['deepseek/deepseek-chat-v3-0324:free',
-               'deepseek/deepseek-r1-0528:free',
-               'deepseek/deepseek-r1:free',
-               'deepseek/deepseek-chat-v3:free',
-               'tngtech/deepseek-r1t-chimera:free',
                'google/gemini-2.0-flash-exp:free',
-               'qwen/qwen3-32b-04-28:free',
                'mistralai/mistral-nemo:free',
-               'qwen/qwen3-14b-04-28:free',
-               'qwen/qwen3-235b-a22b-04-28:free']
+               'google/gemma-3-27b-it:free',
+               'meta-llama/llama-4-maverick:free',
+               'mistralai/mistral-small-3.1-24b-instruct:free',
+               'qwen/qwen2.5-vl-72b-instruct:free',
+               'mistralai/devstral-small:free',
+               'mistralai/mistral-small-3.2-24b-instruct:free',
+               'moonshotai/kimi-dev-72b:free']
 
 cheap_models = ['google/gemini-2.0-flash-001',
-                'google/gemini-2.5-flash-preview-05-20',
-                'google/gemini-2.5-flash-lite-preview-06-17',
-                'google/gemini-2.5-flash-preview-04-17',
-                'openai/gpt-4o-mini']
+                'openai/gpt-4o-mini',
+                'meta-llama/llama-4-maverick-17b-128e-instruct',
+                'qwen/qwen-2.5-72b-instruct',
+                'nousresearch/hermes-3-llama-3.1-70b']
 
-expensive_models = ['deepseek/deepseek-r1-0528',
-                    'anthropic/claude-3-5-haiku',
+expensive_models = ['anthropic/claude-3-5-haiku',
                     'nousresearch/hermes-3-llama-3.1-405b',
                     'sao10k/l3.1-euryale-70b',
-                    'meta-llama/llama-3.1-405b-instruct']
+                    'meta-llama/llama-3.1-405b-instruct',
+                    'thedrummer/skyfall-36b-v2']
+
+expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
+                              'thedrummer/valkyrie-49b-v1',
+                              'mistralai/magistral-small-2506',
+                              'nvidia/llama-3.1-nemotron-ultra-253b-v1',
+                              'perplexity/sonar-reasoning']
 
 def generate_game(game_state: list, action_state: int, comparator_state: int):
     """
