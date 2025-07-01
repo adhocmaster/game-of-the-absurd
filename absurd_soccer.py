@@ -150,7 +150,7 @@ def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, co
                         }
                     ]
                 )
-            data[model].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()).lower())
+            data[model].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()))
             if data['answer'][-1].lower() == data[model][-1].lower():
                 total_results[model] += 1
         
