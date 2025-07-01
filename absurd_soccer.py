@@ -8,7 +8,7 @@ import re
 game_symbols = ["player", "ball", "net"]
 action_symbols = ["hits", "misses"]
 comparator_symbols = ["most", "least"]
-score_symbols = ["score", "point", "car", "ice-cream"]
+score_symbols = ["score", "points", "cars", "ice creams"]
 
 free_models = ['deepseek/deepseek-chat-v3-0324:free',
                'google/gemini-2.0-flash-exp:free',
@@ -38,6 +38,8 @@ expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
                               'mistralai/magistral-small-2506',
                               'nvidia/llama-3.1-nemotron-ultra-253b-v1',
                               'perplexity/sonar-reasoning']
+
+results = ['team a', 'team b', 'both']
 
 def generate_game(game_state: list, action_state: int, comparator_state: int):
     """
@@ -74,14 +76,14 @@ def generate_prompt(game_state: list, action_state: int, comparator_state: int, 
     - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
     """
     prompt = ""
-    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. In one match of this game, each team of {game_symbols[game_state[0]]} takes a turn to shoot {game_symbols[game_state[1]]} five times at a {game_symbols[game_state[2]]}. A {game_symbols[game_state[0]]} can shoot only once in a match. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the {game_symbols[game_state[0]]} that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team gets one {score_symbols[score_state]}. At the end of the match, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]}s wins.\n\n"
+    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. In one match of this game, each team takes a turn to shoot a {game_symbols[game_state[1]]} five times at a {game_symbols[game_state[2]]}. A team can shoot only once in a match. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the match, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
     prompt += "Here is the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
     prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both' if both teams wins. Please place your answer within two curly brackets (ex. {team A})."
     return prompt, answer
 
-def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, price_of_models: str):
+def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
     """
     Tests each model's ability to evaluate a game of absurd soccer using the generate_prompt function
     - api_key: OpenRouter API Key
@@ -89,17 +91,25 @@ def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, co
     - action_state: determines how the action symbols (["hits", "misses"]) are arranged
     - comparator_state: determines how the comparator symbols (["most", "least"]) are arranged
     - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
-    - price_of_models: determines what models will be tested on.
+    - models: either a list of model names from OpenRouter, or a string denoting a curated set of models
         - "free": free models
         - "cheap": $0.1-$0.2 per token
         - "expensive": $0.5-$1 per token
+        - "reasoning": reasoning models that are $0.5-$1 per token
     """
-    if price_of_models == "cheap":
+
+    if model_names == "cheap":
         models = cheap_models
-    elif price_of_models == "expensive":
+    elif model_names == "expensive":
         models = expensive_models
-    else:
+    elif model_names == "free":
         models = free_models
+    elif model_names == "reasoning":
+        models = expensive_reasoning_models
+    elif type(model_names) is list:
+        models = model_names
+    else:
+        print("model_names variable must either be a specific string ('free', 'cheap', 'expensive', 'reasoning') or a list of model names")
 
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
@@ -119,6 +129,7 @@ def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, co
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(answer)
+        
         for model in models:
             completion = client.chat.completions.create(
                 model=model,
@@ -129,11 +140,18 @@ def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, co
                     }
                 ]
             )
-            if completion.choices != None:
-                data[model].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()))
-            else:
-                data[model].append(0)
-            if data['answer'][-1].lower() in data[model][-1].lower():
+            while completion.choices == None or (completion.choices[0].message.content != None and re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()).lower() not in results):
+                completion = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                )
+            data[model].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()).lower())
+            if data['answer'][-1].lower() == data[model][-1].lower():
                 total_results[model] += 1
         
         print("Generated game", str(i))
