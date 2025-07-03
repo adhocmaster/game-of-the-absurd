@@ -24,8 +24,7 @@ free_models = ['deepseek/deepseek-chat-v3-0324:free',
 cheap_models = ['google/gemini-2.0-flash-001',
                 'openai/gpt-4o-mini',
                 'meta-llama/llama-4-maverick-17b-128e-instruct',
-                'qwen/qwen-2.5-72b-instruct',
-                'nousresearch/hermes-3-llama-3.1-70b']
+                'qwen/qwen-2.5-72b-instruct']
 
 expensive_models = ['anthropic/claude-3-5-haiku',
                     'nousresearch/hermes-3-llama-3.1-405b',
