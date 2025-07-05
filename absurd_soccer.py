@@ -66,7 +66,7 @@ def generate_game(game_state: list, action_state: int, comparator_state: int):
 
     return game, winner
 
-def generate_prompt(game_state: list, action_state: int, comparator_state: int, score_state: int):
+def generate_prompt_1(game_state: list, action_state: int, comparator_state: int, score_state: int):
     """
     Generates prompts for models which describe the rules of absurd soccer, provide commentary for a game, and asks for the outcome of that game
     - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
@@ -82,9 +82,9 @@ def generate_prompt(game_state: list, action_state: int, comparator_state: int, 
     prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both' if both teams wins. Please place your answer within two curly brackets (ex. {team A})."
     return prompt, answer
 
-def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
+def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
     """
-    Tests each model's ability to evaluate a game of absurd soccer using the generate_prompt function
+    Tests each model's ability to evaluate a game of absurd soccer using the generate_prompt_1 function
     - api_key: OpenRouter API Key
     - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
     - action_state: determines how the action symbols (["hits", "misses"]) are arranged
@@ -124,7 +124,7 @@ def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, co
         data[model] = []
         total_results[model] = 0
     for i in range(num_sims):
-        prompt, answer = generate_prompt(game_state, action_state, comparator_state, score_state)
+        prompt, answer = generate_prompt_1(game_state, action_state, comparator_state, score_state)
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(answer)
