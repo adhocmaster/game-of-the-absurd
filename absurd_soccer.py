@@ -164,6 +164,143 @@ def run_sim(api_key: str, num_sims: int, game_state: list, action_state: int, co
     df = pd.DataFrame(data)
     return df
 
+def generate_empty_game(game_state: list, comparator_state: int):
+    """
+    Generates incomplete match commentary for a game of absurd soccer, where each team has 5 turns. Commentary is missing values for actions.
+    - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
+    - comparator_state: determines how the comparator symbols (["most", "least"]) are arranged
+    """
+    game = ""
+    for i in range(5):
+        game += f"Team A shoots the {game_symbols[game_state[1]]} and {{}} the {game_symbols[game_state[2]]}.\n"
+        game += f"Team B shoots the {game_symbols[game_state[1]]} and {{}} the {game_symbols[game_state[2]]}.\n"
+    
+    return game
+
+def generate_prompt_2(game_state: list, action_state: int, comparator_state: int, score_state: int, outcome: str):
+    """
+    Generates prompts for models which describe the rules of absurd soccer, provides incomplete commentary and outcome for a game, and asks to complete the commentary.
+    - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
+    - action_state: determines how the action symbols (["hits", "misses"]) are arranged
+    - comparator_state: determines how the comparator symbols (["most", "least"]) are arranged
+    - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
+    - outcome: outcome of the game
+    """
+    prompt = ""
+    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. In one match of this game, each team takes a turn to shoot a {game_symbols[game_state[1]]} five times at a {game_symbols[game_state[2]]}. A team can shoot only once in a match. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the match, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
+    prompt += "Here is an incomplete match commentary for a game of absurd soccer:\n\n"
+    game = generate_empty_game(game_state, action_state)
+    prompt += game
+    prompt += f"\nThe outcome of the game is that {outcome} wins. Your task is to complete the rest of the commentary by filling in the missing values (denoted by brackets {{}}) with either 'hits' or 'misses' such that it matches the rules and the outcomes. You will do this by generating a list of 10 words, with each word either being 'hits' or 'misses', such that the order of the words correspond to the order of the missing values in the game commentary. Please format the list within brackets (ex. {{hits,misses,hits,misses,misses}})"
+    return prompt
+
+def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
+    """
+    Tests each model's ability to complete commentary for a game of absurd soccer using the generate_prompt_2 function
+    - api_key: OpenRouter API Key
+    - num_sims: number of simulations
+    - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
+    - action_state: determines how the action symbols (["hits", "misses"]) are arranged
+    - comparator_state: determines how the comparator symbols (["most", "least"]) are arranged
+    - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
+    - model_names: either a list of model names from OpenRouter, or a string denoting a curated set of models
+        - "free": free models
+        - "cheap": $0.1-$0.2 per token
+        - "expensive": $0.5-$1 per token
+        - "reasoning": reasoning models that are $0.5-$1 per token
+    """
+    if model_names == "cheap":
+        models = cheap_models
+    elif model_names == "expensive":
+        models = expensive_models
+    elif model_names == "free":
+        models = free_models
+    elif model_names == "reasoning":
+        models = expensive_reasoning_models
+    elif type(model_names) is list:
+        models = model_names
+    else:
+        print("model_names variable must either be a specific string ('free', 'cheap', 'expensive', 'reasoning') or a list of model names")
+
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+    data = {
+        'game #': [],
+        'prompt': [],
+        'answer': [],
+    }
+    total_results = {}
+    for model in models:
+        data[model + '_response'] = []
+        data[model + '_values'] = []
+        data[model + '_outcome'] = []
+        total_results[model] = 0
+    
+    for i in range(num_sims):
+        outcome = random.choice(['team A', 'team B', 'both teams'])
+        prompt = generate_prompt_2(game_state, action_state, comparator_state, score_state, outcome)
+        data['game #'].append(i)
+        data['prompt'].append(prompt)
+        data['answer'].append(outcome)
+        
+        for model in models:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            missing_values = re.sub(r'[^a-zA-Z0-9,]+', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip().lower()).split(",")
+            while completion.choices == None or len(missing_values) != 10 or not all(word in ("hits", "misses") for word in missing_values):
+                completion = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                )
+                missing_values = re.sub(r'[^a-zA-Z0-9,]+', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip().lower()).split(",")
+            data[model + '_response'].append(completion.choices[0].message.content)
+            data[model + '_values'].append(missing_values)
+            A_score = 0
+            B_score = 0
+            for j in range(len(missing_values)):
+                if missing_values[j] == action_symbols[action_state]:
+                    if j % 2 == 0:
+                        A_score += 1
+                    if j % 2 == 1:
+                        B_score += 1
+            
+            if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
+                data[model + '_outcome'].append('team A')
+            elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
+                data[model + '_outcome'].append('team B')
+            else:
+                data[model + '_outcome'].append('both teams')
+            
+            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
+                total_results[model] += 1
+        
+        print("Generated game", str(i))
+
+    data['game #'].append('total')
+    data['prompt'].append(None)
+    data['answer'].append(None)
+    for model in models:
+        data[model + '_values'].append(None)
+        data[model + '_response'].append(None)
+        data[model + '_outcome'].append(total_results[model] / num_sims)
+
+    df = pd.DataFrame(data)
+    return df
+
 def save_results_to_file(df, identifier):
     """
     Saves results dataframe to a csv file
