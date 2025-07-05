@@ -24,13 +24,16 @@ free_models = ['deepseek/deepseek-chat-v3-0324:free',
 cheap_models = ['google/gemini-2.0-flash-001',
                 'openai/gpt-4o-mini',
                 'meta-llama/llama-4-maverick-17b-128e-instruct',
-                'qwen/qwen-2.5-72b-instruct']
+                'qwen/qwen-2.5-72b-instruct',
+                'google/gemini-2.5-flash']
 
 expensive_models = ['anthropic/claude-3-5-haiku',
                     'nousresearch/hermes-3-llama-3.1-405b',
                     'sao10k/l3.1-euryale-70b',
                     'meta-llama/llama-3.1-405b-instruct',
-                    'thedrummer/skyfall-36b-v2']
+                    'thedrummer/skyfall-36b-v2',
+                    'openai/gpt-4.1-mini',
+                    'google/gemma-2-27b-it']
 
 expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
                               'thedrummer/valkyrie-49b-v1',
