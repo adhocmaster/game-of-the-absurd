@@ -304,6 +304,162 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
     df = pd.DataFrame(data)
     return df
 
+def generate_prompt_2_alternate(game_state: list, action_state: int, comparator_state: int, score_state: int, outcome: str):
+    """
+    Generates prompts for models which describe the rules of absurd soccer and provide example commentary. Describes an outcome for a game, and asks to write the commentary.
+    - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
+    - action_state: determines how the action symbols (["hits", "misses"]) are arranged
+    - comparator_state: determines how the comparator symbols (["most", "least"]) are arranged
+    - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
+    - outcome: outcome of the game
+    """
+    prompt = ""
+    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. In one match of this game, each team takes a turn to shoot a {game_symbols[game_state[1]]} five times at a {game_symbols[game_state[2]]}. A team can shoot only once in a match. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the match, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
+    prompt += "Here is an example of the match commentary for a game of absurd soccer:\n\n"
+    game, answer = generate_game(game_state, action_state, comparator_state)
+    prompt += game
+    prompt += f"\nYour task is to generate match commentary for a game of absurd soccer such that {outcome} wins. The commentary should be in the same format as the commentary above, and should adhere to the ruleset for absurd soccer. In your response, please insert the match commentary within brackets. (ex. {{match comentary goes here}})"
+    return prompt
+
+def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
+    """
+    Tests each model's ability to write commentary for a game of absurd soccer using the generate_prompt_2 function
+    - api_key: OpenRouter API Key
+    - num_sims: number of simulations
+    - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
+    - action_state: determines how the action symbols (["hits", "misses"]) are arranged
+    - comparator_state: determines how the comparator symbols (["most", "least"]) are arranged
+    - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
+    - model_names: either a list of model names from OpenRouter, or a string denoting a curated set of models
+        - "free": free models
+        - "cheap": $0.1-$0.2 per token
+        - "expensive": $0.5-$1 per token
+        - "reasoning": reasoning models that are $0.5-$1 per token
+    """
+    if model_names == "cheap":
+        models = cheap_models
+    elif model_names == "expensive":
+        models = expensive_models
+    elif model_names == "free":
+        models = free_models
+    elif model_names == "reasoning":
+        models = expensive_reasoning_models
+    elif type(model_names) is list:
+        models = model_names
+    else:
+        print("model_names variable must either be a specific string ('free', 'cheap', 'expensive', 'reasoning') or a list of model names")
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+    data = {
+        'game #': [],
+        'prompt': [],
+        'answer': [],
+    }
+    for model in models:
+        data[model + '_response'] = []
+        data[model + '_commentary'] = []
+        # OUTCOME CELLS NEED TO BE FILLED IN MANUALLY
+        data[model + '_outcome'] = []
+    
+    for i in range(num_sims):
+        outcome = random.choice(['team A', 'team B', 'both teams'])
+        prompt = generate_prompt_2_alternate(game_state, action_state, comparator_state, score_state, outcome)
+        data['game #'].append(i)
+        data['prompt'].append(prompt)
+        data['answer'].append(outcome)
+        
+        for model in models:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            while completion.choices == None:
+                completion = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                )
+            commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
+            data[model + '_response'].append(completion.choices[0].message.content)
+            data[model + '_commentary'].append(commentary)
+            lines = commentary.split("\n")
+
+            #first_line = -1
+            
+            #print("len(lines)", len(lines))
+            for n, line in enumerate(lines):
+                if "Team A shoots the" in line:
+                    first_line = n
+                    break
+            
+
+            if first_line < 0 or len(lines) < first_line + 10:
+                data[model + '_outcome'].append(None)
+                continue
+            
+            A_score = 0
+            B_score = 0
+
+            valid = True
+    
+            for j in range(10):
+                team = "A" if j % 2 == 0 else "B"
+                words = lines[first_line + j].split(' ')
+                #print(words)
+                if f"Team {team} shoots the" in lines[first_line + j]:
+                    if words[6] == "misses" and action_state == 1:
+                        if team == "A":
+                            A_score += 1
+                        if team == "B":
+                            B_score += 1
+                    if words[6] == "hits" and action_state == 0:
+                        if team == "A":
+                            A_score += 1
+                        if team == "B":
+                            B_score += 1
+                    if words[6] != "hits" and words[6] != "misses":
+                        data[model + '_outcome'].append(None)
+                        valid = False
+                        break
+                else:
+                    data[model + '_outcome'].append(None)
+                    valid = False
+                    break
+            
+            if not valid:
+                break
+            
+            if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
+                data[model + '_outcome'].append('team A')
+            elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
+                data[model + '_outcome'].append('team B')
+            else:
+                data[model + '_outcome'].append('both teams')
+        
+        print("Generated game", str(i))
+
+    data['game #'].append('total')
+    data['prompt'].append(None)
+    data['answer'].append(None)
+    for model in models:
+        data[model + '_commentary'].append(None)
+        data[model + '_response'].append(None)
+        data[model + '_outcome'].append(None)
+
+    df = pd.DataFrame(data)
+    return df
+
 def save_results_to_file(df, identifier):
     """
     Saves results dataframe to a csv file
