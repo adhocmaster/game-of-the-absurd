@@ -249,6 +249,7 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
         data['answer'].append(outcome)
         
         for model in models:
+            print("Testing model:", model)
             completion = client.chat.completions.create(
                 model=model,
                 messages=[
@@ -290,6 +291,7 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
             
             if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
                 total_results[model] += 1
+            
         
         print("Generated game", str(i))
 
