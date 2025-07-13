@@ -452,12 +452,19 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
         print("Generated game", str(i))
 
     data['game #'].append('total')
+    print(len(data['game #']))
     data['prompt'].append(None)
+    print(len(data['prompt']))
     data['answer'].append(None)
+    print(len(data['answer']))
     for model in models:
+        print(model)
         data[model + '_commentary'].append(None)
+        print(len(data[model + '_commentary']))
         data[model + '_response'].append(None)
+        print(len(data[model + '_response']))
         data[model + '_outcome'].append(None)
+        print(len(data[model + '_outcome']))
 
     df = pd.DataFrame(data)
     return df
