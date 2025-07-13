@@ -425,12 +425,12 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                             A_score += 1
                         if team == "B":
                             B_score += 1
-                    if words[6] == "hits" and action_state == 0:
+                    elif words[6] == "hits" and action_state == 0:
                         if team == "A":
                             A_score += 1
                         if team == "B":
                             B_score += 1
-                    if words[6] != "hits" and words[6] != "misses":
+                    elif words[6] != "hits" and words[6] != "misses":
                         data[model + '_outcome'].append(None)
                         valid = False
                         break
