@@ -449,14 +449,19 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
             else:
                 data[model + '_outcome'].append('both teams')
         
-        print("Generated game", str(i))
+        print(model)
+        print(len(data[model + '_commentary']))
+        print(len(data[model + '_response']))
+        print(len(data[model + '_outcome']))
+        print("Generated game", str(i))   
+        
 
     data['game #'].append('total')
-    print(len(data['game #']))
+    #print(len(data['game #']))
     data['prompt'].append(None)
-    print(len(data['prompt']))
+    #print(len(data['prompt']))
     data['answer'].append(None)
-    print(len(data['answer']))
+    #print(len(data['answer']))
     for model in models:
         print(model)
         data[model + '_commentary'].append(None)
