@@ -405,7 +405,6 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                     first_line = n
                     break
             
-
             if first_line < 0 or len(lines) < first_line + 10:
                 data[model + '_outcome'].append(None)
                 continue
@@ -440,7 +439,7 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                     break
             
             if not valid:
-                break
+                continue
             
             if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
                 data[model + '_outcome'].append('team A')
