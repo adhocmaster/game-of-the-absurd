@@ -397,7 +397,7 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
             data[model + '_commentary'].append(commentary)
             lines = commentary.split("\n")
 
-            #first_line = -1
+            first_line = -1
             
             #print("len(lines)", len(lines))
             for n, line in enumerate(lines):
