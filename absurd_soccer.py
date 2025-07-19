@@ -362,7 +362,6 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
     for model in models:
         data[model + '_response'] = []
         data[model + '_commentary'] = []
-        # OUTCOME CELLS NEED TO BE FILLED IN MANUALLY
         data[model + '_outcome'] = []
     
     for i in range(num_sims):
@@ -371,8 +370,11 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(outcome)
+
+        print("Generating game", str(i))   
         
         for model in models:
+            print("Tested model:", model)
             completion = client.chat.completions.create(
                 model=model,
                 messages=[
@@ -447,12 +449,10 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                 data[model + '_outcome'].append('team B')
             else:
                 data[model + '_outcome'].append('both teams')
-        
-            print(model)
-            print(len(data[model + '_commentary']))
-            print(len(data[model + '_response']))
-            print(len(data[model + '_outcome']))
-        print("Generated game", str(i))   
+    
+            #print(len(data[model + '_commentary']))
+            #print(len(data[model + '_response']))
+            #print(len(data[model + '_outcome']))
         
 
     data['game #'].append('total')
@@ -462,13 +462,13 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
     data['answer'].append(None)
     #print(len(data['answer']))
     for model in models:
-        print(model)
+        #print(model)
         data[model + '_commentary'].append(None)
-        print(len(data[model + '_commentary']))
+        #print(len(data[model + '_commentary']))
         data[model + '_response'].append(None)
-        print(len(data[model + '_response']))
+        #print(len(data[model + '_response']))
         data[model + '_outcome'].append(None)
-        print(len(data[model + '_outcome']))
+        #print(len(data[model + '_outcome']))
 
     df = pd.DataFrame(data)
     return df
