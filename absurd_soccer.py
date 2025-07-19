@@ -124,7 +124,8 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
     }
     total_results = {}
     for model in models:
-        data[model] = []
+        data[model + '_response'] = []
+        data[model + '_outcome'] = []
         total_results[model] = 0
     for i in range(num_sims):
         prompt, answer = generate_prompt_1(game_state, action_state, comparator_state, score_state)
@@ -154,7 +155,9 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
                         }
                     ]
                 )
-            data[model].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()))
+            
+            data[model + '_response'].append(completion.choices[0].message.content)
+            data[model + '_outcome'].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()))
             if data['answer'][-1].lower() == data[model][-1].lower():
                 total_results[model] += 1
 
@@ -163,7 +166,8 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
     data['prompt'].append(None)
     data['answer'].append(None)
     for model in models:
-        data[model].append(total_results[model] / num_sims)
+        data[model + '_response'].append(None)
+        data[model + '_outcome'].append(total_results[model] / num_sims)
 
     df = pd.DataFrame(data)
     return df
@@ -358,10 +362,12 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
         'prompt': [],
         'answer': [],
     }
+    total_results = {}
     for model in models:
         data[model + '_response'] = []
         data[model + '_commentary'] = []
         data[model + '_outcome'] = []
+        total_results[model] = 0
     
     for i in range(num_sims):
         outcome = random.choice(['team A', 'team B', 'both teams'])
@@ -448,6 +454,9 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                 data[model + '_outcome'].append('team B')
             else:
                 data[model + '_outcome'].append('both teams')
+
+            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
+                total_results[model] += 1
     
             #print(len(data[model + '_commentary']))
             #print(len(data[model + '_response']))
@@ -466,7 +475,7 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
         #print(len(data[model + '_commentary']))
         data[model + '_response'].append(None)
         #print(len(data[model + '_response']))
-        data[model + '_outcome'].append(None)
+        data[model + '_outcome'].append(total_results[model] / num_sims)
         #print(len(data[model + '_outcome']))
 
     df = pd.DataFrame(data)
