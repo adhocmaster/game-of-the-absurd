@@ -131,8 +131,10 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(answer)
+        print("Generating game", str(i))  
         
         for model in models:
+            print("Testing model:", model)
             completion = client.chat.completions.create(
                 model=model,
                 messages=[
@@ -155,8 +157,7 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
             data[model].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()))
             if data['answer'][-1].lower() == data[model][-1].lower():
                 total_results[model] += 1
-        
-        print("Generated game", str(i))
+
 
     data['game #'].append('total')
     data['prompt'].append(None)
@@ -247,6 +248,7 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(outcome)
+        print("Generating game", str(i))  
         
         for model in models:
             print("Testing model:", model)
@@ -291,9 +293,6 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
             
             if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
                 total_results[model] += 1
-            
-        
-        print("Generated game", str(i))
 
     data['game #'].append('total')
     data['prompt'].append(None)
