@@ -43,6 +43,8 @@ expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
 
 results = ['team a', 'team b', 'both']
 
+worst_prompts = pd.read_csv("worst_prompts_alternate_task_2.csv")
+
 def generate_game(game_state: list, action_state: int, comparator_state: int):
     """
     Generates match commentary for a game of absurd soccer, where each team has 5 turns
@@ -462,6 +464,181 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
             #print(len(data[model + '_response']))
             #print(len(data[model + '_outcome']))
         
+
+    data['game #'].append('total')
+    #print(len(data['game #']))
+    data['prompt'].append(None)
+    #print(len(data['prompt']))
+    data['answer'].append(None)
+    #print(len(data['answer']))
+    for model in models:
+        #print(model)
+        data[model + '_commentary'].append(None)
+        #print(len(data[model + '_commentary']))
+        data[model + '_response'].append(None)
+        #print(len(data[model + '_response']))
+        data[model + '_outcome'].append(total_results[model] / num_sims)
+        #print(len(data[model + '_outcome']))
+
+    df = pd.DataFrame(data)
+    return df
+
+def generate_game_with_winner(game_state: list, action_state: int, comparator_state: int, winner: str):
+    w = "" 
+    while w != winner:
+        g, w = generate_game(game_state, action_state, comparator_state)
+    return g
+
+def generate_prompt_2_alt_few_shot(game_state: list, action_state: int, comparator_state: int, score_state: int,ruleset:str, model_group:str, outcome: str):
+    
+    sample_prompts = list(filter(None, worst_prompts[ruleset + "_" + model_group])) 
+    sample_answers = list(filter(None, worst_prompts[ruleset + "_" + model_group + "_answer"])) 
+    random_index = random.sample(range(1, len(sample_prompts)), 4)
+    for i, index in enumerate(random_index):
+        prompt += "Question:\n"
+        prompt += sample_prompts[index]
+        prompt += "\n"
+        prompt += "Answer:\n"
+        if i != 3:
+            prompt += "{" + generate_game_with_winner(game_state, action_state, score_state, sample_answers[index]) + "}\n"
+
+    return prompt
+
+def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
+    prompt = ""
+    game_state = [0, 1, 2]
+    action_state = 0
+    comparator_state = 0
+    score_state = 0
+
+    if ruleset == "Switch" or ruleset=="Miss Switch":
+        game_state = [0, 2, 1]
+    if ruleset == "Miss" or ruleset=="Miss Switch":
+        action_state = 1
+    if ruleset == "Less":
+        comparator_state = 1
+    if ruleset == "Car":
+        score_state = 2
+    if ruleset == "Ice Cream":
+        score_state = 3
+    else:
+        print("invalid ruleset")
+        quit()
+
+    if model_names == "cheap":
+        models = cheap_models
+    elif model_names == "expensive":
+        models = expensive_models
+    elif model_names == "free":
+        models = free_models
+    elif model_names == "reasoning":
+        models = expensive_reasoning_models
+    else:
+        print("model_names variable must be a specific string ('free', 'cheap', 'expensive', 'reasoning')")
+        quit()
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+    data = {
+        'game #': [],
+        'prompt': [],
+        'answer': [],
+    }
+    total_results = {}
+    for model in models:
+        data[model + '_response'] = []
+        data[model + '_commentary'] = []
+        data[model + '_outcome'] = []
+        total_results[model] = 0
+    
+    for i in range(num_sims):
+        outcome = random.choice(['team A', 'team B', 'both teams'])
+        prompt = generate_prompt_2_alt_few_shot(game_state, action_state, comparator_state, score_state, ruleset, model_names, outcome)
+        data['game #'].append(i)
+        data['prompt'].append(prompt)
+        data['answer'].append(outcome)
+
+        print("Generating game", str(i))   
+        
+        for model in models:
+            print("Tested model:", model)
+            completion = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            while completion.choices == None:
+                completion = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                )
+            commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
+            data[model + '_response'].append(completion.choices[0].message.content)
+            data[model + '_commentary'].append(commentary)
+            lines = commentary.split("\n")
+
+            first_line = -1
+            
+            for n, line in enumerate(lines):
+                if "Team A shoots the" in line:
+                    first_line = n
+                    break
+            
+            if first_line < 0 or len(lines) < first_line + 10:
+                data[model + '_outcome'].append(None)
+                continue
+            
+            A_score = 0
+            B_score = 0
+
+            valid = True
+    
+            for j in range(10):
+                team = "A" if j % 2 == 0 else "B"
+                words = lines[first_line + j].split(' ')
+
+                if f"Team {team} shoots the" in lines[first_line + j]:
+                    if words[6] == "misses" and action_state == 1:
+                        if team == "A":
+                            A_score += 1
+                        if team == "B":
+                            B_score += 1
+                    elif words[6] == "hits" and action_state == 0:
+                        if team == "A":
+                            A_score += 1
+                        if team == "B":
+                            B_score += 1
+                    elif words[6] != "hits" and words[6] != "misses":
+                        data[model + '_outcome'].append(None)
+                        valid = False
+                        break
+                else:
+                    data[model + '_outcome'].append(None)
+                    valid = False
+                    break
+            
+            if not valid:
+                continue
+            
+            if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
+                data[model + '_outcome'].append('team A')
+            elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
+                data[model + '_outcome'].append('team B')
+            else:
+                data[model + '_outcome'].append('both teams')
+
+            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
+                total_results[model] += 1
 
     data['game #'].append('total')
     #print(len(data['game #']))
