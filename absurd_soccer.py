@@ -489,8 +489,30 @@ def generate_game_with_winner(game_state: list, action_state: int, comparator_st
         g, w = generate_game(game_state, action_state, comparator_state)
     return g
 
-def generate_prompt_2_alt_few_shot(game_state: list, action_state: int, comparator_state: int, score_state: int,ruleset:str, model_group:str, outcome: str):
+def turn_ruleset_to_settings(ruleset: str):
+    game_state = [0, 1, 2]
+    action_state = 0
+    comparator_state = 0
+    score_state = 0
+
+    if ruleset == "Switch" or ruleset=="Miss Switch":
+        game_state = [0, 2, 1]
+    if ruleset == "Miss" or ruleset=="Miss Switch":
+        action_state = 1
+    if ruleset == "Less":
+        comparator_state = 1
+    if ruleset == "Car":
+        score_state = 2
+    if ruleset == "Ice Cream":
+        score_state = 3
+    else:
+        print("invalid ruleset")
+        quit()
     
+    return game_state, action_state, comparator_state, score_state
+
+def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str, outcome: str):
+    game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
     sample_prompts = list(filter(None, worst_prompts[ruleset + "_" + model_group])) 
     sample_answers = list(filter(None, worst_prompts[ruleset + "_" + model_group + "_answer"])) 
     random_index = random.sample(range(1, len(sample_prompts)), 4)
@@ -506,10 +528,7 @@ def generate_prompt_2_alt_few_shot(game_state: list, action_state: int, comparat
 
 def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
     prompt = ""
-    game_state = [0, 1, 2]
-    action_state = 0
-    comparator_state = 0
-    score_state = 0
+    game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
 
     if ruleset == "Switch" or ruleset=="Miss Switch":
         game_state = [0, 2, 1]
@@ -554,7 +573,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
     
     for i in range(num_sims):
         outcome = random.choice(['team A', 'team B', 'both teams'])
-        prompt = generate_prompt_2_alt_few_shot(game_state, action_state, comparator_state, score_state, ruleset, model_names, outcome)
+        prompt = generate_prompt_2_alt_few_shot(ruleset, model_names, outcome)
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(outcome)
