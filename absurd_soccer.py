@@ -524,10 +524,10 @@ def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
     for i, index in enumerate(random_index):
         prompt += "Question:\n"
         prompt += str(sample_prompts[index])
-        prompt += "\n"
+        prompt += "\n\n"
         prompt += "Answer:\n"
         if i != 3:
-            prompt += "{" + generate_game_with_winner(game_state, action_state, score_state, sample_answers[index]) + "}\n"
+            prompt += "{" + generate_game_with_winner(game_state, action_state, score_state, sample_answers[index]) + "}\n\n"
 
     return prompt
 
