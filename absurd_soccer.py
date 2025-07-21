@@ -495,6 +495,9 @@ def turn_ruleset_to_settings(ruleset: str):
     comparator_state = 0
     score_state = 0
 
+    if ruleset not in ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]:
+        quit()
+
     if ruleset == "Switch" or ruleset=="Miss Switch":
         game_state = [0, 2, 1]
     if ruleset == "Miss" or ruleset=="Miss Switch":
@@ -505,9 +508,6 @@ def turn_ruleset_to_settings(ruleset: str):
         score_state = 2
     if ruleset == "Ice Cream":
         score_state = 3
-    else:
-        print("invalid ruleset")
-        quit()
     
     return game_state, action_state, comparator_state, score_state
 
