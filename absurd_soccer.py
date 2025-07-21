@@ -514,8 +514,8 @@ def turn_ruleset_to_settings(ruleset: str):
 
 def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
-    sample_prompts = list(filter(None, worst_prompts[ruleset + "_" + model_group])) 
-    sample_answers = list(filter(None, worst_prompts[ruleset + "_" + model_group + "_answer"])) 
+    sample_prompts = list(filter(float('nan'), worst_prompts[ruleset + "_" + model_group])) 
+    sample_answers = list(filter(float('nan'), worst_prompts[ruleset + "_" + model_group + "_answer"])) 
     print(sample_answers)
     random_index = random.sample(range(0, len(sample_prompts)), 4)
     prompt = ""
