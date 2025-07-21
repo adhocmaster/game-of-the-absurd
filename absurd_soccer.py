@@ -535,20 +535,6 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
     prompt = ""
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
 
-    if ruleset == "Switch" or ruleset=="Miss Switch":
-        game_state = [0, 2, 1]
-    if ruleset == "Miss" or ruleset=="Miss Switch":
-        action_state = 1
-    if ruleset == "Less":
-        comparator_state = 1
-    if ruleset == "Car":
-        score_state = 2
-    if ruleset == "Ice Cream":
-        score_state = 3
-    else:
-        print("invalid ruleset")
-        quit()
-
     if model_names == "cheap":
         models = cheap_models
     elif model_names == "expensive":
