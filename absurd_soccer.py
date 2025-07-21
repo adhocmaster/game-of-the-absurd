@@ -529,7 +529,7 @@ def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
         if i != 3:
             prompt += "{" + generate_game_with_winner(game_state, action_state, score_state, sample_answers[index]) + "}\n\n"
 
-    return prompt
+    return prompt, sample_answers[random_index[-1]]
 
 def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
     prompt = ""
@@ -563,8 +563,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
         total_results[model] = 0
     
     for i in range(num_sims):
-        outcome = random.choice(['team A', 'team B', 'both teams'])
-        prompt = generate_prompt_2_alt_few_shot(ruleset, model_names)
+        prompt, outcome = generate_prompt_2_alt_few_shot(ruleset, model_names)
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(outcome)
