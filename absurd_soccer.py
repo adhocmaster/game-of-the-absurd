@@ -485,9 +485,9 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
 
 def generate_game_with_winner(game_state: list, action_state: int, comparator_state: int, winner: str):
     w = "" 
+    print(winner)
     while w != winner:
         g, w = generate_game(game_state, action_state, comparator_state)
-        print(winner)
     return g
 
 def turn_ruleset_to_settings(ruleset: str):
