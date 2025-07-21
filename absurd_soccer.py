@@ -487,6 +487,7 @@ def generate_game_with_winner(game_state: list, action_state: int, comparator_st
     w = "" 
     while w != winner:
         g, w = generate_game(game_state, action_state, comparator_state)
+        print(w)
     return g
 
 def turn_ruleset_to_settings(ruleset: str):
