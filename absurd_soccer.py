@@ -515,9 +515,9 @@ def turn_ruleset_to_settings(ruleset: str):
 def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
     sample_prompts = [x for x in worst_prompts[ruleset + "_" + model_group] if type(x) is str]
-    print(sample_prompts)
+    print(sample_prompts[-1])
     #sample_prompts = [x for x in sample_prompts if x.startswith("Absurd")]
-    sample_answers = [x for x in worst_prompts[ruleset + "_" + model_group + "_absurd"] if x in ["team A", "team B", "both teams"]]
+    sample_answers = [x for x in worst_prompts[ruleset + "_" + model_group + "_answer"] if x in ["team A", "team B", "both teams"]]
     print(sample_answers)
     random_index = random.sample(range(0, len(sample_prompts)), 4)
     prompt = ""
