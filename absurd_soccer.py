@@ -41,7 +41,7 @@ expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
                               'nvidia/llama-3.1-nemotron-ultra-253b-v1',
                               'perplexity/sonar-reasoning']
 
-results = ['team a', 'team b', 'both']
+results = ['team a', 'team b', 'both teams']
 
 worst_prompts = pd.read_csv("worst_prompts_alternate_task_2.csv")
 
@@ -67,7 +67,7 @@ def generate_game(game_state: list, action_state: int, comparator_state: int):
     elif A.count(1) < B.count(1):
         winner = "team B" if comparator_state == 0 else "team A"
     else:
-        winner = "both"
+        winner = "both teams"
 
     return game, winner
 
@@ -84,7 +84,7 @@ def generate_prompt_1(game_state: list, action_state: int, comparator_state: int
     prompt += "Here is the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
-    prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both' if both teams wins. Please place your answer within two curly brackets (ex. {team A})."
+    prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both teams' if both teams wins. Please place your answer within two curly brackets (ex. {team A})."
     return prompt, answer
 
 def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
@@ -511,7 +511,7 @@ def turn_ruleset_to_settings(ruleset: str):
     
     return game_state, action_state, comparator_state, score_state
 
-def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str, outcome: str):
+def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
     sample_prompts = list(filter(None, worst_prompts[ruleset + "_" + model_group])) 
     sample_answers = list(filter(None, worst_prompts[ruleset + "_" + model_group + "_answer"])) 
@@ -574,7 +574,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
     
     for i in range(num_sims):
         outcome = random.choice(['team A', 'team B', 'both teams'])
-        prompt = generate_prompt_2_alt_few_shot(ruleset, model_names, outcome)
+        prompt = generate_prompt_2_alt_few_shot(ruleset, model_names)
         data['game #'].append(i)
         data['prompt'].append(prompt)
         data['answer'].append(outcome)
