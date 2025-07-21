@@ -485,7 +485,7 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
 
 def generate_game_with_winner(game_state: list, action_state: int, comparator_state: int, winner: str):
     w = "" 
-    print(winner)
+    #print(winner)
     while w != winner:
         g, w = generate_game(game_state, action_state, comparator_state)
     return g
@@ -516,6 +516,7 @@ def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
     sample_prompts = list(filter(None, worst_prompts[ruleset + "_" + model_group])) 
     sample_answers = list(filter(None, worst_prompts[ruleset + "_" + model_group + "_answer"])) 
+    print(sample_answers)
     random_index = random.sample(range(0, len(sample_prompts)), 4)
     prompt = ""
     for i, index in enumerate(random_index):
