@@ -160,7 +160,7 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
             
             data[model + '_response'].append(completion.choices[0].message.content)
             data[model + '_outcome'].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()))
-            if data['answer'].lower() == data[model + '_outcome'].lower():
+            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
                 total_results[model] += 1
 
 
