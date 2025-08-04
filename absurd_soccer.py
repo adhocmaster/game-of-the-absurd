@@ -751,16 +751,16 @@ def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_n
 
     if task == "DO":
         for i in range(num_sims):
-            task_1("do_"+ruleset, api_key, num_sims, ruleset, model_names)
+            task_1(api_key, num_sims, ruleset, model_names, "do_"+ruleset)
     elif task == "FC":
         for i in range(num_sims):
-            task_2("fc_"+ruleset, api_key, num_sims, ruleset, model_names)
+            task_2(api_key, ruleset, ruleset, model_names, "fc_"+ruleset)
     elif task == "WC":
         for i in range(num_sims):
-            task_2_alternate("wc_"+ruleset, api_key, num_sims, ruleset, model_names)
+            task_2_alternate(api_key, num_sims, ruleset, model_names, "wc_"+ruleset)
     elif task == "WCFS":
         for i in range(num_sims):
-            t2_alt_few_shot("wcfs_"+ruleset, api_key, num_sims, ruleset, model_names)
+            t2_alt_few_shot(api_key, num_sims, ruleset, model_names, "wcfs_"+ruleset)
   
 def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
     all_rulesets = ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]
