@@ -117,7 +117,7 @@ def generate_prompt_1(game_state: list, action_state: int, comparator_state: int
     prompt += "Here is the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
-    prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both teams' if both teams wins. Please place your answer within two curly brackets (ex. {team A})."
+    prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both teams' if both teams wins. Please work out your reasoning process for the answer, and place your answer within two curly brackets (ex. {team A})."
     return prompt, answer
 
 def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
@@ -253,7 +253,7 @@ def generate_prompt_2(game_state: list, action_state: int, comparator_state: int
     prompt += "Here is an incomplete match commentary for a game of absurd soccer:\n\n"
     game = generate_empty_game(game_state, action_state)
     prompt += game
-    prompt += f"\nThe outcome of the game is that {outcome} wins. Your task is to complete the rest of the commentary by filling in the missing values (denoted by brackets {{}}) with either 'hits' or 'misses' such that it matches the rules and the outcomes. You will do this by generating a list of 10 words, with each word either being 'hits' or 'misses', such that the order of the words correspond to the order of the missing values in the game commentary. Please format the list within brackets (ex. {{hits,misses,hits,misses,misses}})"
+    prompt += f"\nThe outcome of the game is that {outcome} wins. Your task is to complete the rest of the commentary by filling in the missing values (denoted by brackets {{}}) with either 'hits' or 'misses' such that it matches the rules and the outcomes. You will do this by generating a list of 10 words, with each word either being 'hits' or 'misses', such that the order of the words correspond to the order of the missing values in the game commentary. Please work out your reasoning process for the answer, and format the list within brackets (ex. {{hits,misses,hits,misses,misses}})"
     return prompt
 
 def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
@@ -396,7 +396,7 @@ def generate_prompt_2_alternate(game_state: list, action_state: int, comparator_
     prompt += "Here is an example of the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
-    prompt += f"\nYour task is to generate match commentary for a game of absurd soccer such that {outcome} wins. The commentary should be in the same format as the commentary above, and should adhere to the ruleset for absurd soccer. In your response, please insert the match commentary within brackets. (ex. {{match comentary goes here}})"
+    prompt += f"\nYour task is to generate match commentary for a game of absurd soccer such that {outcome} wins. The commentary should be in the same format as the commentary above, and should adhere to the ruleset for absurd soccer. Please work out your reasoning process for the answer, and in your response, insert the match commentary within brackets. (ex. {{match comentary goes here}})"
     return prompt
 
 def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
@@ -598,9 +598,6 @@ def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
 
     return prompt, sample_answers[random_index[-1]]
 
-# TODO: ADD FEATURE TO ADD ALL MODELS TO A TASK
-# TODO: COMBINE ALL TASKS INTO ONE FUNCTION
-
 def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
     prompt = ""
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
@@ -770,7 +767,12 @@ def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_n
             t2_alt_few_shot(api_key, num_sims, ruleset, model_names)
     
     os.chdir('..')
-    
+
+# TODO: EXPLICTLY ASK TO REASON, MAKE SURE REASONING IS ON FOR REASONING MODELS
+# TODO: FIX TASK 2 ALTERNATE SO THAT IT IS ONLY 10 LINES
+# TODO: IF NOT THE CORRECT FORMAT FOR TASK 2 ALTERNATE, DISCARD
+# TODO: TEST RUN_FULL_EXP FOR 1 SIM
+  
 def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
     all_rulesets = ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]
 
