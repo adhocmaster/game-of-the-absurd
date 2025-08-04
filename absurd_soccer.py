@@ -52,9 +52,10 @@ def save_results_to_file(df, identifier):
     - identifier: keyword or identifier that file should be named with
     """
     print(os.getcwd())
-    if os.path.exists("./"+identifier + '.csv'):
+    try:
         os.remove("./"+identifier + '.csv')
-    
+    except:
+        pass
     df.to_csv(identifier + '.csv', index=False)
 
 def turn_ruleset_to_settings(ruleset: str):
