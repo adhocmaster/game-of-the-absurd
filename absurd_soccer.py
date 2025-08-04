@@ -52,8 +52,8 @@ def save_results_to_file(df, identifier):
     - identifier: keyword or identifier that file should be named with
     """
     print(os.getcwd)
-    if os.path.exists(identifier + '.csv'):
-        os.remove(identifier + '.csv')
+    if os.path.exists("./"+identifier + '.csv'):
+        os.remove("./"+identifier + '.csv')
     
     df.to_csv(identifier + '.csv', index=False)
 
