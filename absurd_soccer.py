@@ -51,7 +51,7 @@ def save_results_to_file(df, identifier):
     - df: DataFrame that should be saved
     - identifier: keyword or identifier that file should be named with
     """
-    print(os.getcwd())
+
     try:
         os.remove("./"+identifier + '.csv')
     except:
