@@ -396,7 +396,7 @@ def generate_prompt_2_alternate(game_state: list, action_state: int, comparator_
     prompt += "Here is an example of the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
-    prompt += f"\nYour task is to generate match commentary for a game of absurd soccer such that {outcome} wins. The commentary should be in the same format as the commentary above, and should adhere to the ruleset for absurd soccer. Please work out your reasoning process for the answer, and in your response, insert the match commentary within brackets. (ex. {{match comentary goes here}})"
+    prompt += f"\nYour task is to generate match commentary for a game of absurd soccer such that {outcome} wins. The commentary should use the exact same format and grammar as the commentary above, and should adhere to the ruleset for absurd soccer. Please work out your reasoning process for the answer, and in your response, insert the match commentary within brackets. (ex. {{match comentary goes here}})"
     return prompt
 
 def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
@@ -477,74 +477,75 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
                     }
                 ]
             )
-            while completion.choices == None:
-                completion = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ]
-                )
-            commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
-            new_row[model + '_response'] = completion.choices[0].message.content
-            new_row[model + '_commentary'] = commentary
-            lines = commentary.split("\n")
+            while model + '_outcome' not in new_row.keys():
+                while completion.choices == None:
+                    completion = client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ]
+                    )
+                commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
+                new_row[model + '_response'] = completion.choices[0].message.content
+                new_row[model + '_commentary'] = commentary
+                lines = commentary.split("\n")
 
-            first_line = -1
-            
-            #print("len(lines)", len(lines))
-            for n, line in enumerate(lines):
-                if "Team A shoots the" in line:
-                    first_line = n
-                    break
-            
-            if first_line < 0 or len(lines) < first_line + 10:
-                new_row[model + '_outcome'] = None
-                continue
-            
-            A_score = 0
-            B_score = 0
+                first_line = -1
+                
+                #print("len(lines)", len(lines))
+                for n, line in enumerate(lines):
+                    if "Team A shoots the" in line:
+                        first_line = n
+                        break
+                
+                if first_line < 0 or len(lines) < first_line + 10:
+                    continue
+                
+                A_score = 0
+                B_score = 0
 
-            valid = True
-    
-            for j in range(10):
-                team = "A" if j % 2 == 0 else "B"
-                words = lines[first_line + j].split(' ')
-                #print(words)
-                if f"Team {team} shoots the" in lines[first_line + j]:
-                    if words[6] == "misses" and action_state == 1:
-                        if team == "A":
-                            A_score += 1
-                        if team == "B":
-                            B_score += 1
-                    elif words[6] == "hits" and action_state == 0:
-                        if team == "A":
-                            A_score += 1
-                        if team == "B":
-                            B_score += 1
-                    elif words[6] != "hits" and words[6] != "misses":
-                        data[model + '_outcome'].append(None)
+                valid = True
+        
+                for j in range(10):
+                    team = "A" if j % 2 == 0 else "B"
+                    words = lines[first_line + j].split(' ')
+                    #print(words)
+                    if f"Team {team} shoots the" in lines[first_line + j]:
+                        if words[6] == "misses" and action_state == 1:
+                            if team == "A":
+                                A_score += 1
+                            if team == "B":
+                                B_score += 1
+                        elif words[6] == "hits" and action_state == 0:
+                            if team == "A":
+                                A_score += 1
+                            if team == "B":
+                                B_score += 1
+                        elif words[6] != "hits" and words[6] != "misses":
+                            valid = False
+                            break
+                    else:
                         valid = False
                         break
-                else:
-                    data[model + '_outcome'].append(None)
-                    valid = False
-                    break
-            
-            if not valid:
-                continue
-            
-            if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
-                new_row[model + '_outcome'] = 'team A'
-            elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
-                new_row[model + '_outcome'] = 'team B'
-            else:
-                new_row[model + '_outcome'] = 'both teams'
 
-            if new_row['answer'].lower() == data[model + '_outcome'].lower():
-                total_results[model] += 1
+                if len(lines) > first_line + 10 and ("Team A shoots the" in lines[first_line + 10] or "Team B shoots the" in lines[first_line + 10]):
+                    valid = False
+                
+                if not valid:
+                    continue
+                
+                if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
+                    new_row[model + '_outcome'] = 'team A'
+                elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
+                    new_row[model + '_outcome'] = 'team B'
+                else:
+                    new_row[model + '_outcome'] = 'both teams'
+
+                if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
+                    total_results[model] += 1
     
             #print(len(data[model + '_commentary']))
             #print(len(data[model + '_response']))
@@ -767,11 +768,6 @@ def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_n
             t2_alt_few_shot(api_key, num_sims, ruleset, model_names)
     
     os.chdir('..')
-
-# TODO: EXPLICTLY ASK TO REASON, MAKE SURE REASONING IS ON FOR REASONING MODELS
-# TODO: FIX TASK 2 ALTERNATE SO THAT IT IS ONLY 10 LINES
-# TODO: IF NOT THE CORRECT FORMAT FOR TASK 2 ALTERNATE, DISCARD
-# TODO: TEST RUN_FULL_EXP FOR 1 SIM
   
 def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
     all_rulesets = ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]
