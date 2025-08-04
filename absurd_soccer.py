@@ -180,9 +180,9 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     for i in range(num_sims-original_length):
         new_row = {}
         prompt, answer = generate_prompt_1(game_state, action_state, comparator_state, score_state)
-        new_row['game #'] = i+original_length
-        new_row['prompt'] = prompt
-        new_row['answer'] = answer
+        new_row['game #'] = [i+original_length]
+        new_row['prompt'] = [prompt]
+        new_row['answer'] = [answer]
         print("Generating game", str(i))  
         
         for model in models:
@@ -207,9 +207,9 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
                     ]
                 )
             
-            new_row[model + '_response'] = completion.choices[0].message.content
-            new_row[model + '_outcome'] = re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())
-            if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
+            new_row[model + '_response'] = [completion.choices[0].message.content]
+            new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())]
+            if new_row['answer'][-1].lower() == new_row[model + '_outcome'][-1].lower():
                 total_results[model] += 1
 
         new_row = pd.DataFrame(new_row)
@@ -217,12 +217,12 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         save_results_to_file(file_name, df)
 
     new_row = {}
-    new_row['game #'] = 'total'
-    new_row['prompt'] = None
-    new_row['answer'] = None
+    new_row['game #'] = ['total']
+    new_row['prompt'] = [None]
+    new_row['answer'] = [None]
     for model in models:
-        new_row[model + '_response'] = None
-        new_row[model + '_outcome'] = total_results[model] / num_sims
+        new_row[model + '_response'] = [None]
+        new_row[model + '_outcome'] = [total_results[model] / num_sims]
 
     new_row = pd.DataFrame(new_row)
     df = pd.concat([df, new_row])
@@ -320,9 +320,9 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         new_row = {}
         outcome = random.choice(['team A', 'team B', 'both teams'])
         prompt = generate_prompt_2(game_state, action_state, comparator_state, score_state, outcome)
-        new_row['game #'] = i
-        new_row['prompt'] = prompt
-        new_row['answer'] = outcome
+        new_row['game #'] = [i]
+        new_row['prompt'] = [prompt]
+        new_row['answer'] = [outcome]
         print("Generating game", str(i))  
         
         for model in models:
@@ -348,8 +348,8 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
                     ]
                 )
                 missing_values = re.sub(r'[^a-zA-Z0-9,]+', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip().lower()).split(",")
-            new_row[model + '_response'] = completion.choices[0].message.content
-            new_row[model + '_values'] = missing_values
+            new_row[model + '_response'] = [completion.choices[0].message.content]
+            new_row[model + '_values'] = [missing_values]
             A_score = 0
             B_score = 0
             for j in range(len(missing_values)):
@@ -360,13 +360,13 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
                         B_score += 1
             
             if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
-                new_row[model + '_outcome'] = 'team A'
+                new_row[model + '_outcome'] = ['team A']
             elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
-                new_row[model + '_outcome'] = 'team B'
+                new_row[model + '_outcome'] = ['team B']
             else:
-                new_row[model + '_outcome'] = 'both teams'
+                new_row[model + '_outcome'] = ['both teams']
             
-            if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
+            if new_row['answer'][-1].lower() == new_row[model + '_outcome'][-1].lower():
                 total_results[model] += 1
             
         new_row = pd.DataFrame(new_row)
@@ -374,13 +374,13 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         save_results_to_file(file_name, df)
 
     new_row = {}
-    new_row['game #'] = 'total'
-    new_row['prompt'] = None
-    new_row['answer'] = None
+    new_row['game #'] = ['total']
+    new_row['prompt'] = [None]
+    new_row['answer'] = [None]
     for model in models:
-        new_row[model + '_values'] = None
-        new_row[model + '_response'] = None
-        new_row[model + '_outcome'] = total_results[model] / num_sims
+        new_row[model + '_values'] = [None]
+        new_row[model + '_response'] = [None]
+        new_row[model + '_outcome'] = [total_results[model] / num_sims]
 
     new_row = pd.DataFrame(new_row)
     df = pd.concat([df, new_row])
@@ -464,9 +464,9 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
         new_row = {}
         outcome = random.choice(['team A', 'team B', 'both teams'])
         prompt = generate_prompt_2_alternate(game_state, action_state, comparator_state, score_state, outcome)
-        new_row['game #'] = i
-        new_row['prompt'] = prompt
-        new_row['answer'] = outcome
+        new_row['game #'] = [i]
+        new_row['prompt'] = [prompt]
+        new_row['answer'] = [outcome]
 
         print("Generating game", str(i))   
         
@@ -493,8 +493,8 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
                         ]
                     )
                 commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
-                new_row[model + '_response'] = completion.choices[0].message.content
-                new_row[model + '_commentary'] = commentary
+                new_row[model + '_response'] = [completion.choices[0].message.content]
+                new_row[model + '_commentary'] = [commentary]
                 lines = commentary.split("\n")
 
                 first_line = -1
@@ -542,13 +542,13 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
                     continue
                 
                 if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
-                    new_row[model + '_outcome'] = 'team A'
+                    new_row[model + '_outcome'] = ['team A']
                 elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
-                    new_row[model + '_outcome'] = 'team B'
+                    new_row[model + '_outcome'] = ['team B']
                 else:
-                    new_row[model + '_outcome'] = 'both teams'
+                    new_row[model + '_outcome'] = ['both teams']
 
-                if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
+                if new_row['answer'][-1].lower() == new_row[model + '_outcome'][-1].lower():
                     total_results[model] += 1
     
             #print(len(data[model + '_commentary']))
@@ -560,19 +560,19 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
         save_results_to_file(file_name, df)
 
     new_row = {}
-    new_row['game #'] = 'total'
+    new_row['game #'] = ['total']
     #print(len(data['game #']))
-    new_row['prompt'] = None
+    new_row['prompt'] = [None]
     #print(len(data['prompt']))
-    new_row['answer'] = None
+    new_row['answer'] = [None]
     #print(len(data['answer']))
     for model in models:
         #print(model)
-        new_row[model + '_commentary'] = None
+        new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
-        new_row[model + '_response'] = None
+        new_row[model + '_response'] = [None]
         #print(len(data[model + '_response']))
-        new_row[model + '_outcome'] = total_results[model] / num_sims
+        new_row[model + '_outcome'] = [total_results[model] / num_sims]
         #print(len(data[model + '_outcome']))
 
     new_row = pd.DataFrame(new_row)
@@ -649,9 +649,9 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
     for i in range(num_sims-original_length):
         new_row = {}
         prompt, outcome = generate_prompt_2_alt_few_shot(ruleset, model_names)
-        new_row['game #'] = i
-        new_row['prompt'] = prompt
-        new_row['answer'] = outcome
+        new_row['game #'] = [i]
+        new_row['prompt'] = [prompt]
+        new_row['answer'] = [outcome]
 
         print("Generating game", str(i))   
         
@@ -677,8 +677,8 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
                     ]
                 )
             commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
-            new_row[model + '_response'] = completion.choices[0].message.content
-            new_row[model + '_commentary'] = commentary
+            new_row[model + '_response'] = [completion.choices[0].message.content]
+            new_row[model + '_commentary'] = [commentary]
             lines = commentary.split("\n")
 
             first_line = -1
@@ -689,7 +689,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
                     break
             
             if first_line < 0 or len(lines) < first_line + 10:
-                new_row[model + '_outcome'] = None
+                new_row[model + '_outcome'] = [None]
                 continue
             
             A_score = 0
@@ -713,11 +713,11 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
                         if team == "B":
                             B_score += 1
                     elif words[6] != "hits" and words[6] != "misses":
-                        new_row[model + '_outcome'] = None
+                        new_row[model + '_outcome'] = [None]
                         valid = False
                         break
                 else:
-                    new_row[model + '_outcome'] = None
+                    new_row[model + '_outcome'] = [None]
                     valid = False
                     break
             
@@ -725,29 +725,29 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
                 continue
             
             if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
-                new_row[model + '_outcome'] = 'team A'
+                new_row[model + '_outcome'] = ['team A']
             elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
-                new_row[model + '_outcome'] = 'team B'
+                new_row[model + '_outcome'] = ['team B']
             else:
-                new_row[model + '_outcome'] = 'both teams'
+                new_row[model + '_outcome'] = ['both teams']
 
-            if new_row['answer'].lower() == data[model + '_outcome'].lower():
+            if new_row['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
                 total_results[model] += 1
 
     new_row = {}
-    new_row['game #'] = 'total'
+    new_row['game #'] = ['total']
     #print(len(data['game #']))
-    new_row['prompt'] = None
+    new_row['prompt'] = [None]
     #print(len(data['prompt']))
-    new_row['answer'] = None
+    new_row['answer'] = [None]
     #print(len(data['answer']))
     for model in models:
         #print(model)
-        new_row[model + '_commentary'] = None
+        new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
-        new_row[model + '_response'] = None
+        new_row[model + '_response'] = [None]
         #print(len(data[model + '_response']))
-        new_row[model + '_outcome'] = total_results[model] / num_sims
+        new_row[model + '_outcome'] = [total_results[model] / num_sims]
         #print(len(data[model + '_outcome']))
 
     new_row = pd.DataFrame(new_row)
