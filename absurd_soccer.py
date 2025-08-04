@@ -763,7 +763,7 @@ def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_n
             task_1(api_key, num_sims, ruleset, model_names, "do_"+ruleset)
     elif task == "FC":
         for i in range(num_sims):
-            task_2(api_key, ruleset, ruleset, model_names, "fc_"+ruleset)
+            task_2(api_key, num_sims, ruleset, model_names, "fc_"+ruleset)
     elif task == "WC":
         for i in range(num_sims):
             task_2_alternate(api_key, num_sims, ruleset, model_names, "wc_"+ruleset)
