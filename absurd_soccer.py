@@ -212,7 +212,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
                 total_results[model] += 1
 
-        df = df.append(new_row, ignore_index=True)
+        df.append(new_row, ignore_index=True)
         save_results_to_file(file_name, df)
 
     new_row = {}
@@ -223,7 +223,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         new_row[model + '_response'] = None
         new_row[model + '_outcome'] = total_results[model] / num_sims
 
-    df = df.append(new_row, ignore_index=True)
+    df.append(new_row, ignore_index=True)
     save_results_to_file(file_name, df)
 
 def generate_empty_game(game_state: list, comparator_state: int):
@@ -367,7 +367,7 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
                 total_results[model] += 1
             
-        df = df.append(new_row, ignore_index=True)
+        df.append(new_row, ignore_index=True)
         save_results_to_file(file_name, df)
 
     new_row = {}
@@ -379,7 +379,7 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         new_row[model + '_response'] = None
         new_row[model + '_outcome'] = total_results[model] / num_sims
 
-    df = df.append(new_row, ignore_index=True)
+    df.append(new_row, ignore_index=True)
     save_results_to_file(file_name, df)
 
 def generate_prompt_2_alternate(game_state: list, action_state: int, comparator_state: int, score_state: int, outcome: str):
@@ -551,7 +551,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
             #print(len(data[model + '_response']))
             #print(len(data[model + '_outcome']))
         
-        df = df.append(new_row, ignore_index=True)
+        df.append(new_row, ignore_index=True)
         save_results_to_file(file_name, df)
 
     new_row = {}
@@ -570,7 +570,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
         new_row[model + '_outcome'] = total_results[model] / num_sims
         #print(len(data[model + '_outcome']))
 
-    df = df.append(new_row, ignore_index=True)
+    df.append(new_row, ignore_index=True)
     save_results_to_file(file_name, df)
 
 def generate_game_with_winner(game_state: list, action_state: int, comparator_state: int, winner: str):
@@ -744,7 +744,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
         new_row[model + '_outcome'] = total_results[model] / num_sims
         #print(len(data[model + '_outcome']))
 
-    df = df.append(new_row, ignore_index=True)
+    df.append(new_row, ignore_index=True)
     save_results_to_file(file_name, df)
 
 def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_names):
