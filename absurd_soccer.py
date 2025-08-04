@@ -80,7 +80,7 @@ def generate_prompt_1(game_state: list, action_state: int, comparator_state: int
     - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
     """
     prompt = ""
-    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. In one match of this game, each team takes a turn to shoot a {game_symbols[game_state[1]]} five times at a {game_symbols[game_state[2]]}. A team can shoot only once in a match. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the match, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
+    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. The game consists of five matches; in each match, both teams shoot a {game_symbols[game_state[1]]} at a {game_symbols[game_state[2]]}. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the game, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
     prompt += "Here is the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
@@ -197,7 +197,7 @@ def generate_prompt_2(game_state: list, action_state: int, comparator_state: int
     - outcome: outcome of the game
     """
     prompt = ""
-    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. In one match of this game, each team takes a turn to shoot a {game_symbols[game_state[1]]} five times at a {game_symbols[game_state[2]]}. A team can shoot only once in a match. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the match, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
+    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. The game consists of five matches; in each match, both teams shoot a {game_symbols[game_state[1]]} at a {game_symbols[game_state[2]]}. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the game, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
     prompt += "Here is an incomplete match commentary for a game of absurd soccer:\n\n"
     game = generate_empty_game(game_state, action_state)
     prompt += game
@@ -321,7 +321,7 @@ def generate_prompt_2_alternate(game_state: list, action_state: int, comparator_
     - outcome: outcome of the game
     """
     prompt = ""
-    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. In one match of this game, each team takes a turn to shoot a {game_symbols[game_state[1]]} five times at a {game_symbols[game_state[2]]}. A team can shoot only once in a match. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the match, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
+    prompt = f"Absurd soccer is played by two teams of {game_symbols[game_state[0]]}s. Each team starts out with zero {score_symbols[score_state]}. The game consists of five matches; in each match, both teams shoot a {game_symbols[game_state[1]]} at a {game_symbols[game_state[2]]}. When one team shoots, the other team defends the {game_symbols[game_state[2]]}. If the team that makes the shot {action_symbols[action_state]} the {game_symbols[game_state[2]]}, their team's {score_symbols[score_state]} increases by 1. At the end of the game, the team having the {comparator_symbols[comparator_state]} {score_symbols[score_state]} wins.\n\n"
     prompt += "Here is an example of the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
