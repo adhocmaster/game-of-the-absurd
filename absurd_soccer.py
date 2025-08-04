@@ -45,6 +45,39 @@ results = ['team a', 'team b', 'both teams']
 
 worst_prompts = pd.read_csv("worst_prompts_alternate_task_2.csv")
 
+def save_results_to_file(df, identifier):
+    """
+    Saves results dataframe to a csv file
+    - df: DataFrame that should be saved
+    - identifier: keyword or identifier that file should be named with
+    """
+    if os.path.exists(identifier + '.csv'):
+        os.remove(identifier + '.csv')
+    
+    df.to_csv(identifier + '.csv', index=False)
+
+def turn_ruleset_to_settings(ruleset: str):
+    game_state = [0, 1, 2]
+    action_state = 0
+    comparator_state = 0
+    score_state = 0
+
+    if ruleset not in ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]:
+        quit()
+
+    if ruleset == "Switch" or ruleset=="Miss Switch":
+        game_state = [0, 2, 1]
+    if ruleset == "Miss" or ruleset=="Miss Switch":
+        action_state = 1
+    if ruleset == "Less":
+        comparator_state = 1
+    if ruleset == "Car":
+        score_state = 2
+    if ruleset == "Ice Cream":
+        score_state = 3
+    
+    return game_state, action_state, comparator_state, score_state
+
 def generate_game(game_state: list, action_state: int, comparator_state: int):
     """
     Generates match commentary for a game of absurd soccer, where each team has 5 turns
@@ -87,7 +120,7 @@ def generate_prompt_1(game_state: list, action_state: int, comparator_state: int
     prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both teams' if both teams wins. Please place your answer within two curly brackets (ex. {team A})."
     return prompt, answer
 
-def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
+def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
     """
     Tests each model's ability to evaluate a game of absurd soccer using the generate_prompt_1 function
     - api_key: OpenRouter API Key
@@ -102,7 +135,11 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
         - "reasoning": reasoning models that are $0.5-$1 per token
     """
 
-    if model_names == "cheap":
+    game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
+
+    if model_names == "all":
+        models = cheap_models + expensive_models + expensive_reasoning_models
+    elif model_names == "cheap":
         models = cheap_models
     elif model_names == "expensive":
         models = expensive_models
@@ -119,21 +156,33 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
-    data = {
-        'game #': [],
-        'prompt': [],
-        'answer': [],
-    }
-    total_results = {}
-    for model in models:
-        data[model + '_response'] = []
-        data[model + '_outcome'] = []
-        total_results[model] = 0
-    for i in range(num_sims):
+
+    try:
+        df = pd.read_csv(file_name+'.csv')
+    except:
+        data = {
+            'game #': [],
+            'prompt': [],
+            'answer': [],
+        }
+        total_results = {}
+        for model in models:
+            data[model + '_response'] = []
+            data[model + '_outcome'] = []
+            total_results[model] = 0
+        
+        df = pd.DataFrame(data)
+    
+    original_length = len(df)
+    if original_length > num_sims:
+        return
+
+    for i in range(num_sims-original_length):
+        new_row = {}
         prompt, answer = generate_prompt_1(game_state, action_state, comparator_state, score_state)
-        data['game #'].append(i)
-        data['prompt'].append(prompt)
-        data['answer'].append(answer)
+        new_row['game #'] = i+original_length
+        new_row['prompt'] = prompt
+        new_row['answer'] = answer
         print("Generating game", str(i))  
         
         for model in models:
@@ -158,21 +207,24 @@ def task_1(api_key: str, num_sims: int, game_state: list, action_state: int, com
                     ]
                 )
             
-            data[model + '_response'].append(completion.choices[0].message.content)
-            data[model + '_outcome'].append(re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()))
-            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
+            new_row[model + '_response'] = completion.choices[0].message.content
+            new_row[model + '_outcome'] = re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())
+            if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
                 total_results[model] += 1
 
+        df = df.append(new_row, ignore_index=True)
+        save_results_to_file(file_name, df)
 
-    data['game #'].append('total')
-    data['prompt'].append(None)
-    data['answer'].append(None)
+    new_row = {}
+    new_row['game #'] = 'total'
+    new_row['prompt'] = None
+    new_row['answer'] = None
     for model in models:
-        data[model + '_response'].append(None)
-        data[model + '_outcome'].append(total_results[model] / num_sims)
+        new_row[model + '_response'] = None
+        new_row[model + '_outcome'] = total_results[model] / num_sims
 
-    df = pd.DataFrame(data)
-    return df
+    df = df.append(new_row, ignore_index=True)
+    save_results_to_file(file_name, df)
 
 def generate_empty_game(game_state: list, comparator_state: int):
     """
@@ -204,7 +256,7 @@ def generate_prompt_2(game_state: list, action_state: int, comparator_state: int
     prompt += f"\nThe outcome of the game is that {outcome} wins. Your task is to complete the rest of the commentary by filling in the missing values (denoted by brackets {{}}) with either 'hits' or 'misses' such that it matches the rules and the outcomes. You will do this by generating a list of 10 words, with each word either being 'hits' or 'misses', such that the order of the words correspond to the order of the missing values in the game commentary. Please format the list within brackets (ex. {{hits,misses,hits,misses,misses}})"
     return prompt
 
-def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
+def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
     """
     Tests each model's ability to complete commentary for a game of absurd soccer using the generate_prompt_2 function
     - api_key: OpenRouter API Key
@@ -219,7 +271,12 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
         - "expensive": $0.5-$1 per token
         - "reasoning": reasoning models that are $0.5-$1 per token
     """
-    if model_names == "cheap":
+
+    game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
+
+    if model_names == "all":
+        models = cheap_models + expensive_models + expensive_reasoning_models
+    elif model_names == "cheap":
         models = cheap_models
     elif model_names == "expensive":
         models = expensive_models
@@ -232,28 +289,38 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
     else:
         print("model_names variable must either be a specific string ('free', 'cheap', 'expensive', 'reasoning') or a list of model names")
 
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=api_key,
-    )
-    data = {
-        'game #': [],
-        'prompt': [],
-        'answer': [],
-    }
-    total_results = {}
-    for model in models:
-        data[model + '_response'] = []
-        data[model + '_values'] = []
-        data[model + '_outcome'] = []
-        total_results[model] = 0
+    try:
+        df = pd.read_csv(file_name+'.csv')
+    except:
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+        )
+        data = {
+            'game #': [],
+            'prompt': [],
+            'answer': [],
+        }
+        total_results = {}
+        for model in models:
+            data[model + '_response'] = []
+            data[model + '_values'] = []
+            data[model + '_outcome'] = []
+            total_results[model] = 0
+        
+        df = pd.DataFrame(data)
     
-    for i in range(num_sims):
+    original_length = len(df)
+    if original_length > num_sims:
+        return
+    
+    for i in range(num_sims-original_length):
+        new_row = {}
         outcome = random.choice(['team A', 'team B', 'both teams'])
         prompt = generate_prompt_2(game_state, action_state, comparator_state, score_state, outcome)
-        data['game #'].append(i)
-        data['prompt'].append(prompt)
-        data['answer'].append(outcome)
+        new_row['game #'] = i
+        new_row['prompt'] = prompt
+        new_row['answer'] = outcome
         print("Generating game", str(i))  
         
         for model in models:
@@ -279,8 +346,8 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
                     ]
                 )
                 missing_values = re.sub(r'[^a-zA-Z0-9,]+', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip().lower()).split(",")
-            data[model + '_response'].append(completion.choices[0].message.content)
-            data[model + '_values'].append(missing_values)
+            new_row[model + '_response'] = completion.choices[0].message.content
+            new_row[model + '_values'] = missing_values
             A_score = 0
             B_score = 0
             for j in range(len(missing_values)):
@@ -291,25 +358,29 @@ def task_2(api_key: str, num_sims: int, game_state: list, action_state: int, com
                         B_score += 1
             
             if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
-                data[model + '_outcome'].append('team A')
+                new_row[model + '_outcome'] = 'team A'
             elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
-                data[model + '_outcome'].append('team B')
+                new_row[model + '_outcome'] = 'team B'
             else:
-                data[model + '_outcome'].append('both teams')
+                new_row[model + '_outcome'] = 'both teams'
             
-            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
+            if new_row['answer'].lower() == new_row[model + '_outcome'].lower():
                 total_results[model] += 1
+            
+        df = df.append(new_row, ignore_index=True)
+        save_results_to_file(file_name, df)
 
-    data['game #'].append('total')
-    data['prompt'].append(None)
-    data['answer'].append(None)
+    new_row = {}
+    new_row['game #'] = 'total'
+    new_row['prompt'] = None
+    new_row['answer'] = None
     for model in models:
-        data[model + '_values'].append(None)
-        data[model + '_response'].append(None)
-        data[model + '_outcome'].append(total_results[model] / num_sims)
+        new_row[model + '_values'] = None
+        new_row[model + '_response'] = None
+        new_row[model + '_outcome'] = total_results[model] / num_sims
 
-    df = pd.DataFrame(data)
-    return df
+    df = df.append(new_row, ignore_index=True)
+    save_results_to_file(file_name, df)
 
 def generate_prompt_2_alternate(game_state: list, action_state: int, comparator_state: int, score_state: int, outcome: str):
     """
@@ -328,7 +399,7 @@ def generate_prompt_2_alternate(game_state: list, action_state: int, comparator_
     prompt += f"\nYour task is to generate match commentary for a game of absurd soccer such that {outcome} wins. The commentary should be in the same format as the commentary above, and should adhere to the ruleset for absurd soccer. In your response, please insert the match commentary within brackets. (ex. {{match comentary goes here}})"
     return prompt
 
-def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state: int, comparator_state: int, score_state: int, model_names):
+def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
     """
     Tests each model's ability to write commentary for a game of absurd soccer using the generate_prompt_2 function
     - api_key: OpenRouter API Key
@@ -343,7 +414,12 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
         - "expensive": $0.5-$1 per token
         - "reasoning": reasoning models that are $0.5-$1 per token
     """
-    if model_names == "cheap":
+
+    game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
+
+    if model_names == "all":
+        models = cheap_models + expensive_models + expensive_reasoning_models
+    elif model_names == "cheap":
         models = cheap_models
     elif model_names == "expensive":
         models = expensive_models
@@ -359,24 +435,34 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
-    data = {
-        'game #': [],
-        'prompt': [],
-        'answer': [],
-    }
-    total_results = {}
-    for model in models:
-        data[model + '_response'] = []
-        data[model + '_commentary'] = []
-        data[model + '_outcome'] = []
-        total_results[model] = 0
+
+    try:
+        df = pd.read_csv(file_name+'.csv')
+    except:
+        data = {
+            'game #': [],
+            'prompt': [],
+            'answer': [],
+        }
+        total_results = {}
+        for model in models:
+            data[model + '_response'] = []
+            data[model + '_commentary'] = []
+            data[model + '_outcome'] = []
+            total_results[model] = 0
+        df = pd.DataFrame(data)
     
-    for i in range(num_sims):
+    original_length = len(df)
+    if original_length > num_sims:
+        return
+
+    for i in range(num_sims-original_length):
+        new_row = {}
         outcome = random.choice(['team A', 'team B', 'both teams'])
         prompt = generate_prompt_2_alternate(game_state, action_state, comparator_state, score_state, outcome)
-        data['game #'].append(i)
-        data['prompt'].append(prompt)
-        data['answer'].append(outcome)
+        new_row['game #'] = i
+        new_row['prompt'] = prompt
+        new_row['answer'] = outcome
 
         print("Generating game", str(i))   
         
@@ -402,8 +488,8 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                     ]
                 )
             commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
-            data[model + '_response'].append(completion.choices[0].message.content)
-            data[model + '_commentary'].append(commentary)
+            new_row[model + '_response'] = completion.choices[0].message.content
+            new_row[model + '_commentary'] = commentary
             lines = commentary.split("\n")
 
             first_line = -1
@@ -415,7 +501,7 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                     break
             
             if first_line < 0 or len(lines) < first_line + 10:
-                data[model + '_outcome'].append(None)
+                new_row[model + '_outcome'] = None
                 continue
             
             A_score = 0
@@ -451,37 +537,40 @@ def task_2_alternate(api_key: str, num_sims: int, game_state: list, action_state
                 continue
             
             if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
-                data[model + '_outcome'].append('team A')
+                new_row[model + '_outcome'] = 'team A'
             elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
-                data[model + '_outcome'].append('team B')
+                new_row[model + '_outcome'] = 'team B'
             else:
-                data[model + '_outcome'].append('both teams')
+                new_row[model + '_outcome'] = 'both teams'
 
-            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
+            if new_row['answer'].lower() == data[model + '_outcome'].lower():
                 total_results[model] += 1
     
             #print(len(data[model + '_commentary']))
             #print(len(data[model + '_response']))
             #print(len(data[model + '_outcome']))
         
+        df = df.append(new_row, ignore_index=True)
+        save_results_to_file(file_name, df)
 
-    data['game #'].append('total')
+    new_row = {}
+    new_row['game #'] = 'total'
     #print(len(data['game #']))
-    data['prompt'].append(None)
+    new_row['prompt'] = None
     #print(len(data['prompt']))
-    data['answer'].append(None)
+    new_row['answer'] = None
     #print(len(data['answer']))
     for model in models:
         #print(model)
-        data[model + '_commentary'].append(None)
+        new_row[model + '_commentary'] = None
         #print(len(data[model + '_commentary']))
-        data[model + '_response'].append(None)
+        new_row[model + '_response'] = None
         #print(len(data[model + '_response']))
-        data[model + '_outcome'].append(total_results[model] / num_sims)
+        new_row[model + '_outcome'] = total_results[model] / num_sims
         #print(len(data[model + '_outcome']))
 
-    df = pd.DataFrame(data)
-    return df
+    df = df.append(new_row, ignore_index=True)
+    save_results_to_file(file_name, df)
 
 def generate_game_with_winner(game_state: list, action_state: int, comparator_state: int, winner: str):
     w = "" 
@@ -489,28 +578,6 @@ def generate_game_with_winner(game_state: list, action_state: int, comparator_st
     while w != winner:
         g, w = generate_game(game_state, action_state, comparator_state)
     return g
-
-def turn_ruleset_to_settings(ruleset: str):
-    game_state = [0, 1, 2]
-    action_state = 0
-    comparator_state = 0
-    score_state = 0
-
-    if ruleset not in ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]:
-        quit()
-
-    if ruleset == "Switch" or ruleset=="Miss Switch":
-        game_state = [0, 2, 1]
-    if ruleset == "Miss" or ruleset=="Miss Switch":
-        action_state = 1
-    if ruleset == "Less":
-        comparator_state = 1
-    if ruleset == "Car":
-        score_state = 2
-    if ruleset == "Ice Cream":
-        score_state = 3
-    
-    return game_state, action_state, comparator_state, score_state
 
 def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
@@ -531,11 +598,16 @@ def generate_prompt_2_alt_few_shot(ruleset:str, model_group:str):
 
     return prompt, sample_answers[random_index[-1]]
 
-def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
+# TODO: ADD FEATURE TO ADD ALL MODELS TO A TASK
+# TODO: COMBINE ALL TASKS INTO ONE FUNCTION
+
+def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
     prompt = ""
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
 
-    if model_names == "cheap":
+    if model_names == "all":
+        models = cheap_models + expensive_models + expensive_reasoning_models
+    elif model_names == "cheap":
         models = cheap_models
     elif model_names == "expensive":
         models = expensive_models
@@ -550,23 +622,32 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
-    data = {
-        'game #': [],
-        'prompt': [],
-        'answer': [],
-    }
-    total_results = {}
-    for model in models:
-        data[model + '_response'] = []
-        data[model + '_commentary'] = []
-        data[model + '_outcome'] = []
-        total_results[model] = 0
+    try:
+        df = pd.read_csv(file_name + '.csv')
+    except:
+        data = {
+            'game #': [],
+            'prompt': [],
+            'answer': [],
+        }
+        total_results = {}
+        for model in models:
+            data[model + '_response'] = []
+            data[model + '_commentary'] = []
+            data[model + '_outcome'] = []
+            total_results[model] = 0
+        df = pd.DataFrame(data)
     
-    for i in range(num_sims):
+    original_length = len(df)
+    if original_length > num_sims:
+        return
+
+    for i in range(num_sims-original_length):
+        new_row = {}
         prompt, outcome = generate_prompt_2_alt_few_shot(ruleset, model_names)
-        data['game #'].append(i)
-        data['prompt'].append(prompt)
-        data['answer'].append(outcome)
+        new_row['game #'] = i
+        new_row['prompt'] = prompt
+        new_row['answer'] = outcome
 
         print("Generating game", str(i))   
         
@@ -592,8 +673,8 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
                     ]
                 )
             commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
-            data[model + '_response'].append(completion.choices[0].message.content)
-            data[model + '_commentary'].append(commentary)
+            new_row[model + '_response'] = completion.choices[0].message.content
+            new_row[model + '_commentary'] = commentary
             lines = commentary.split("\n")
 
             first_line = -1
@@ -604,7 +685,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
                     break
             
             if first_line < 0 or len(lines) < first_line + 10:
-                data[model + '_outcome'].append(None)
+                new_row[model + '_outcome'] = None
                 continue
             
             A_score = 0
@@ -628,11 +709,11 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
                         if team == "B":
                             B_score += 1
                     elif words[6] != "hits" and words[6] != "misses":
-                        data[model + '_outcome'].append(None)
+                        new_row[model + '_outcome'] = None
                         valid = False
                         break
                 else:
-                    data[model + '_outcome'].append(None)
+                    new_row[model + '_outcome'] = None
                     valid = False
                     break
             
@@ -640,38 +721,73 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names):
                 continue
             
             if (A_score > B_score and comparator_state == 0) or (A_score < B_score and comparator_state == 1):
-                data[model + '_outcome'].append('team A')
+                new_row[model + '_outcome'] = 'team A'
             elif (A_score < B_score and comparator_state == 0) or (A_score > B_score and comparator_state == 1):
-                data[model + '_outcome'].append('team B')
+                new_row[model + '_outcome'] = 'team B'
             else:
-                data[model + '_outcome'].append('both teams')
+                new_row[model + '_outcome'] = 'both teams'
 
-            if data['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
+            if new_row['answer'].lower() == data[model + '_outcome'].lower():
                 total_results[model] += 1
 
-    data['game #'].append('total')
+    new_row = {}
+    new_row['game #'] = 'total'
     #print(len(data['game #']))
-    data['prompt'].append(None)
+    new_row['prompt'] = None
     #print(len(data['prompt']))
-    data['answer'].append(None)
+    new_row['answer'] = None
     #print(len(data['answer']))
     for model in models:
         #print(model)
-        data[model + '_commentary'].append(None)
+        new_row[model + '_commentary'] = None
         #print(len(data[model + '_commentary']))
-        data[model + '_response'].append(None)
+        new_row[model + '_response'] = None
         #print(len(data[model + '_response']))
-        data[model + '_outcome'].append(total_results[model] / num_sims)
+        new_row[model + '_outcome'] = total_results[model] / num_sims
         #print(len(data[model + '_outcome']))
 
-    df = pd.DataFrame(data)
-    return df
+    df = df.append(new_row, ignore_index=True)
+    save_results_to_file(file_name, df)
 
-def save_results_to_file(df, identifier):
-    """
-    Saves results dataframe to a csv file
-    - df: DataFrame that should be saved
-    - identifier: keyword or identifier that file should be named with
-    """
-    today_str = datetime.today().strftime('%Y-%m-%d')
-    df.to_csv(identifier + '_results' + today_str + '.csv', index=False)
+def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_names):
+    
+    if not os.path.exists(ruleset):
+        os.mkdir(ruleset)
+    
+    os.chdir(ruleset)
+
+    if task == "DO":
+        for i in range(num_sims):
+            task_1(api_key, num_sims, ruleset, model_names)
+    elif task == "FC":
+        for i in range(num_sims):
+            task_2(api_key, num_sims, ruleset, model_names)
+    elif task == "WC":
+        for i in range(num_sims):
+            task_2_alternate(api_key, num_sims, ruleset, model_names)
+    elif task == "WCFS":
+        for i in range(num_sims):
+            t2_alt_few_shot(api_key, num_sims, ruleset, model_names)
+    
+    os.chdir('..')
+    
+def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
+    all_rulesets = ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]
+
+    if not os.path.exists(task):
+        os.mkdir(task)
+    
+    os.chdir(task)
+
+    for r in all_rulesets:
+        run_all_models(task, api_key, num_sims, r, model_names)
+    
+    os.chdir('..')
+
+def run_full_exp(folder_name, api_key, num_sims, model_names):
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
+    os.chdir(folder_name)
+    all_tasks = ["DO", "FC", "WC", "WCFS"]
+    for t in all_tasks:
+        run_all_rulesets(t, api_key, num_sims, model_names)
