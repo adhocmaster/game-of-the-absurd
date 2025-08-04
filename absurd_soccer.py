@@ -748,26 +748,19 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
     save_results_to_file(file_name, df)
 
 def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_names):
-    
-    if not os.path.exists(ruleset):
-        os.mkdir(ruleset)
-    
-    os.chdir(ruleset)
 
     if task == "DO":
         for i in range(num_sims):
-            task_1(api_key, num_sims, ruleset, model_names)
+            task_1("do_"+ruleset, api_key, num_sims, ruleset, model_names)
     elif task == "FC":
         for i in range(num_sims):
-            task_2(api_key, num_sims, ruleset, model_names)
+            task_2("fc_"+ruleset, api_key, num_sims, ruleset, model_names)
     elif task == "WC":
         for i in range(num_sims):
-            task_2_alternate(api_key, num_sims, ruleset, model_names)
+            task_2_alternate("wc_"+ruleset, api_key, num_sims, ruleset, model_names)
     elif task == "WCFS":
         for i in range(num_sims):
-            t2_alt_few_shot(api_key, num_sims, ruleset, model_names)
-    
-    os.chdir('..')
+            t2_alt_few_shot("wcfs_"+ruleset, api_key, num_sims, ruleset, model_names)
   
 def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
     all_rulesets = ["Default", "Switch", "Miss Switch", "Miss", "Less", "Car", "Ice Cream"]
