@@ -167,12 +167,11 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             'prompt': [],
             'answer': [],
         }
-        total_results = {}
+
         for model in models:
             data[model + '_response'] = []
             data[model + '_outcome'] = []
-            total_results[model] = 0
-        
+    
         df = pd.DataFrame(data)
     
     original_length = len(df)
@@ -211,18 +210,21 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             
             new_row[model + '_response'] = [completion.choices[0].message.content]
             new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())]
-            if new_row['answer'][-1].lower() == new_row[model + '_outcome'][-1].lower():
-                total_results[model] += 1
 
         new_row = pd.DataFrame(new_row)
         df = pd.concat([df, new_row])
         save_results_to_file(df, file_name)
 
+    total_results = {}
     new_row = {}
     new_row['game #'] = ['total']
     new_row['prompt'] = [None]
     new_row['answer'] = [None]
     for model in models:
+        total_results[model] = 0
+        for i in range(num_sims):
+            if df['answer'][i].lower() == df[model + '_outcome'][i].lower():
+                total_results[model] += 1
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
 
@@ -305,12 +307,11 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             'prompt': [],
             'answer': [],
         }
-        total_results = {}
+        
         for model in models:
             data[model + '_response'] = []
             data[model + '_values'] = []
             data[model + '_outcome'] = []
-            total_results[model] = 0
         
         df = pd.DataFrame(data)
     
@@ -368,18 +369,22 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             else:
                 new_row[model + '_outcome'] = ['both teams']
             
-            if new_row['answer'][-1].lower() == new_row[model + '_outcome'][-1].lower():
-                total_results[model] += 1
+            
             
         new_row = pd.DataFrame(new_row)
         df = pd.concat([df, new_row])
         save_results_to_file(df, file_name)
 
+    total_results = {}
     new_row = {}
     new_row['game #'] = ['total']
     new_row['prompt'] = [None]
     new_row['answer'] = [None]
     for model in models:
+        total_results[model] = 0
+        for i in range(num_sims):
+            if df['answer'][i].lower() == new_row[model + '_outcome'][i].lower():
+                total_results[model] += 1
         new_row[model + '_values'] = [None]
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
@@ -450,12 +455,11 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
             'prompt': [],
             'answer': [],
         }
-        total_results = {}
         for model in models:
             data[model + '_response'] = []
             data[model + '_commentary'] = []
             data[model + '_outcome'] = []
-            total_results[model] = 0
+            
         df = pd.DataFrame(data)
     
     original_length = len(df)
@@ -550,8 +554,6 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
                 else:
                     new_row[model + '_outcome'] = ['both teams']
 
-                if new_row['answer'][-1].lower() == new_row[model + '_outcome'][-1].lower():
-                    total_results[model] += 1
     
             #print(len(data[model + '_commentary']))
             #print(len(data[model + '_response']))
@@ -561,6 +563,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
         df = pd.concat([df, new_row])
         save_results_to_file(df, file_name)
 
+    total_results = {}
     new_row = {}
     new_row['game #'] = ['total']
     #print(len(data['game #']))
@@ -569,6 +572,10 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
     new_row['answer'] = [None]
     #print(len(data['answer']))
     for model in models:
+        total_results[model] = 0
+        for i in range(num_sims):
+            if new_row['answer'][i].lower() == new_row[model + '_outcome'][i].lower():
+                total_results[model] += 1
         #print(model)
         new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
@@ -636,12 +643,12 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
             'prompt': [],
             'answer': [],
         }
-        total_results = {}
+        
         for model in models:
             data[model + '_response'] = []
             data[model + '_commentary'] = []
             data[model + '_outcome'] = []
-            total_results[model] = 0
+            
         df = pd.DataFrame(data)
     
     original_length = len(df)
@@ -733,10 +740,9 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
             else:
                 new_row[model + '_outcome'] = ['both teams']
 
-            if new_row['answer'][-1].lower() == data[model + '_outcome'][-1].lower():
-                total_results[model] += 1
 
     new_row = {}
+    total_results = {}
     new_row['game #'] = ['total']
     #print(len(data['game #']))
     new_row['prompt'] = [None]
@@ -744,6 +750,10 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
     new_row['answer'] = [None]
     #print(len(data['answer']))
     for model in models:
+        total_results[model] = 0
+        for i in range(num_sims):
+            if new_row['answer'][i].lower() == data[model + '_outcome'][i].lower():
+                total_results[model] += 1
         #print(model)
         new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
