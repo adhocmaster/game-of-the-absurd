@@ -184,7 +184,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         new_row['game #'] = [i+original_length]
         new_row['prompt'] = [prompt]
         new_row['answer'] = [answer]
-        print("Generating game", str(i))  
+        print("Generating game", str(i+original_length))  
         
         for model in models:
             print("Testing model:", model)
@@ -223,7 +223,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if df['answer'][i].lower() == df[model + '_outcome'][i].lower():
+            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                 total_results[model] += 1
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
@@ -326,7 +326,7 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         new_row['game #'] = [i]
         new_row['prompt'] = [prompt]
         new_row['answer'] = [outcome]
-        print("Generating game", str(i))  
+        print("Generating game", str(i+original_length))  
         
         for model in models:
             print("Testing model:", model)
@@ -383,7 +383,7 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if df['answer'][i].lower() == new_row[model + '_outcome'][i].lower():
+            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                 total_results[model] += 1
         new_row[model + '_values'] = [None]
         new_row[model + '_response'] = [None]
@@ -474,7 +474,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
         new_row['prompt'] = [prompt]
         new_row['answer'] = [outcome]
 
-        print("Generating game", str(i))   
+        print("Generating game", str(i+original_length))   
         
         for model in models:
             print("Tested model:", model)
@@ -574,7 +574,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if new_row['answer'][i].lower() == new_row[model + '_outcome'][i].lower():
+            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                 total_results[model] += 1
         #print(model)
         new_row[model + '_commentary'] = [None]
@@ -662,7 +662,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
         new_row['prompt'] = [prompt]
         new_row['answer'] = [outcome]
 
-        print("Generating game", str(i))   
+        print("Generating game", str(i+original_length))   
         
         for model in models:
             print("Tested model:", model)
@@ -752,7 +752,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if new_row['answer'][i].lower() == data[model + '_outcome'][i].lower():
+            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                 total_results[model] += 1
         #print(model)
         new_row[model + '_commentary'] = [None]
