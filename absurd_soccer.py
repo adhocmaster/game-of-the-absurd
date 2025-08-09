@@ -295,13 +295,15 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     else:
         print("model_names variable must either be a specific string ('free', 'cheap', 'expensive', 'reasoning') or a list of model names")
 
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+    
     try:
         df = pd.read_csv(file_name+'.csv')
     except:
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
+        
         data = {
             'game #': [],
             'prompt': [],
