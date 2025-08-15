@@ -187,6 +187,10 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         print("Generating game", str(i+original_length))  
         
         for model in models:
+            if model == "thedrummer/valkyrie-49b-v1":
+                new_row[model + '_response'] = None
+                new_row[model + '_outcome'] = None
+                continue
             print("Testing model:", model)
             completion = client.chat.completions.create(
                 model=model,
@@ -331,6 +335,11 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         print("Generating game", str(i+original_length))  
         
         for model in models:
+            if model == "thedrummer/valkyrie-49b-v1":
+                new_row[model + '_response'] = None
+                new_row[model + '_values'] = None
+                new_row[model + '_outcome'] = None
+                continue
             print("Testing model:", model)
             completion = client.chat.completions.create(
                 model=model,
@@ -479,6 +488,11 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
         print("Generating game", str(i+original_length))   
         
         for model in models:
+            if model == "thedrummer/valkyrie-49b-v1":
+                new_row[model + '_response'] = None
+                new_row[model + '_commentary'] = None
+                new_row[model + '_outcome'] = None
+                continue
             print("Tested model:", model)
             completion = client.chat.completions.create(
                 model=model,
@@ -667,6 +681,11 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
         print("Generating game", str(i+original_length))   
         
         for model in models:
+            if model == "thedrummer/valkyrie-49b-v1":
+                new_row[model + '_response'] = None
+                new_row[model + '_commentary'] = None
+                new_row[model + '_outcome'] = None
+                continue
             print("Tested model:", model)
             completion = client.chat.completions.create(
                 model=model,
@@ -741,7 +760,10 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
                 new_row[model + '_outcome'] = ['team B']
             else:
                 new_row[model + '_outcome'] = ['both teams']
-
+        
+        new_row = pd.DataFrame(new_row)
+        df = pd.concat([df, new_row])
+        save_results_to_file(df, file_name)
 
     new_row = {}
     total_results = {}
