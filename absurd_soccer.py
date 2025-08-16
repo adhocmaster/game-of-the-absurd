@@ -227,8 +227,9 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
-                total_results[model] += 1
+            if type(list(df[model + '_outcome'])[i]) == str:
+                if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
+                    total_results[model] += 1
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
 
@@ -394,8 +395,9 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
-                total_results[model] += 1
+            if type(list(df[model + '_outcome'])[i]) == str:
+                if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
+                    total_results[model] += 1
         new_row[model + '_values'] = [None]
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
@@ -590,8 +592,9 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
-                total_results[model] += 1
+            if type(list(df[model + '_outcome'])[i]) == str:
+                if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
+                    total_results[model] += 1
         #print(model)
         new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
@@ -776,8 +779,9 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
-                total_results[model] += 1
+            if type(list(df[model + '_outcome'])[i]) == str:
+                if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
+                    total_results[model] += 1
         #print(model)
         new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
