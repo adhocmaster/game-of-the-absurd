@@ -507,6 +507,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
             )
             while model + '_outcome' not in new_row.keys():
                 while completion.choices == None:
+                    print("Testing " + model + "...")
                     completion = client.chat.completions.create(
                         model=model,
                         messages=[
