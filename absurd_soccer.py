@@ -495,7 +495,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
                 new_row[model + '_commentary'] = None
                 new_row[model + '_outcome'] = None
                 continue
-            print("Tested model:", model)
+            print("Testing model:", model)
             completion = client.chat.completions.create(
                 model=model,
                 messages=[
