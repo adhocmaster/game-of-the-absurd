@@ -240,9 +240,8 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
 
 def generate_prompt_1_few_shot(ruleset:str, prompts):
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
-
-    sample_prompts = [x[ruleset] for x in prompts if type(x) is str and x[ruleset].startswith("Absurd")]
-    sample_answers = [x[ruleset+"_answer"] for x in prompts if type(x) is str and x[ruleset].startswith("Absurd")]
+    sample_prompts = [prompts[ruleset][i] for i in range(len(prompts[ruleset])) if type(prompts[ruleset][i]) is str and prompts["ruleset"][i].startswith("Absurd")]
+    sample_answers = [prompts[ruleset+"_answer"][i] for i in range(len(prompts[ruleset])) if type(prompts[ruleset][i]) is str and prompts["ruleset"][i].startswith("Absurd")]
     #print(sample_answers)
     random_index = random.sample(range(0, len(sample_prompts)), 4)
     prompt = ""
