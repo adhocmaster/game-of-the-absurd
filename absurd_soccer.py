@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from datetime import datetime
 import re
+import statistics
 
 game_symbols = ["player", "ball", "net"]
 action_symbols = ["hits", "misses"]
@@ -36,7 +37,7 @@ expensive_models = ['anthropic/claude-3-5-haiku',
                     'google/gemma-2-27b-it']
 
 expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
-                              'thedrummer/valkyrie-49b-v1',
+                              #'thedrummer/valkyrie-49b-v1',
                               'mistralai/magistral-small-2506',
                               'nvidia/llama-3.1-nemotron-ultra-253b-v1',
                               'perplexity/sonar-reasoning']
@@ -830,3 +831,33 @@ def run_full_exp(folder_name, api_key, num_sims, model_names):
     all_tasks = ["DO", "FC", "WC", "WCFS"]
     for t in all_tasks:
         run_all_rulesets(t, api_key, num_sims, model_names)
+
+def get_worse_results(folder_name: str, tasks: list):
+    rulesets = ["Car", "Default", "Ice Cream", "Less", "Miss", "Miss Switch", "Switch"]
+    os.chdir(folder_name)
+    for t in tasks:
+        os.chdir(t)
+        for r in rulesets:
+            worst_prompts = {r: [], r+"_answer": []}
+            results = pd.read_csv(t.lower() + "_" + r + ".csv")
+            scores = []
+            for i in range(len(results)):
+                count = 0
+                for m in cheap_models + expensive_models + expensive_reasoning_models:
+                    if results[m+"_outcome"][i] == results["answer"][i]:
+                        count += 1
+                scores.append(count)
+            for i in range(len(results)):
+                if scores[i] < statistics.median(scores):
+                    worst_prompts[r].append(results["prompt"][i])
+                    worst_prompts[r+"_answer"].append(results["answer"][i])
+            worst_prompts = pd.DataFrame(worst_prompts)
+            worst_prompts.to_csv("worst_prompts_" + t + "_" + r)
+
+
+
+            
+                
+
+
+
