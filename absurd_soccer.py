@@ -852,7 +852,9 @@ def get_worse_results(folder_name: str, tasks: list):
                     worst_prompts[r].append(results["prompt"][i])
                     worst_prompts[r+"_answer"].append(results["answer"][i])
             worst_prompts = pd.DataFrame(worst_prompts)
-            worst_prompts.to_csv("worst_prompts_" + t + "_" + r)
+            worst_prompts.to_csv("worst_prompts_" + t + "_" + r + ".csv")
+        os.chdir('..')
+    os.chdir('..')
 
 
 
