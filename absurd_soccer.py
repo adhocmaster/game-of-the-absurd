@@ -841,13 +841,13 @@ def get_worse_results(folder_name: str, tasks: list):
             worst_prompts = {r: [], r+"_answer": []}
             results = pd.read_csv(t.lower() + "_" + r + ".csv")
             scores = []
-            for i in range(len(results)):
+            for i in range(len(results)-1):
                 count = 0
                 for m in cheap_models + expensive_models + expensive_reasoning_models:
                     if results[m+"_outcome"][i] == results["answer"][i]:
                         count += 1
                 scores.append(count)
-            for i in range(len(results)):
+            for i in range(len(results)-1):
                 if scores[i] < statistics.median(scores):
                     worst_prompts[r].append(results["prompt"][i])
                     worst_prompts[r+"_answer"].append(results["answer"][i])
