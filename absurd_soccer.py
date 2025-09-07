@@ -238,7 +238,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     df = pd.concat([df, new_row])
     save_results_to_file(df, file_name)
 
-def generate_prompt_1_few_shot(ruleset:str, model_group:str, prompts):
+def generate_prompt_1_few_shot(ruleset:str, prompts):
     game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
 
     sample_prompts = [x[ruleset] for x in prompts if type(x) is str and x[ruleset].startswith("Absurd")]
@@ -314,7 +314,8 @@ def task_1_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
 
     for i in range(num_sims-original_length):
         new_row = {}
-        prompt, answer = generate_prompt_1_few_shot(game_state, action_state, comparator_state, score_state)
+        bad_prompts = pd.read_csv("worst_prompts_DO_"+ruleset+".csv")
+        prompt, answer = generate_prompt_1_few_shot(ruleset, bad_prompts)
         new_row['game #'] = [i+original_length]
         new_row['prompt'] = [prompt]
         new_row['answer'] = [answer]
