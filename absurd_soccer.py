@@ -238,6 +238,139 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     df = pd.concat([df, new_row])
     save_results_to_file(df, file_name)
 
+def generate_prompt_1_few_shot(ruleset:str, model_group:str, prompts):
+    game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
+
+    sample_prompts = [x[ruleset] for x in prompts if type(x) is str and x[ruleset].startswith("Absurd")]
+    sample_answers = [x[ruleset+"_answer"] for x in prompts if type(x) is str and x[ruleset].startswith("Absurd")]
+    #print(sample_answers)
+    random_index = random.sample(range(0, len(sample_prompts)), 4)
+    prompt = ""
+    for i, index in enumerate(random_index):
+        prompt += "Question:\n"
+        prompt += str(sample_prompts[index])
+        prompt += "\n\n"
+        prompt += "Answer:\n"
+        if i != 3:
+            prompt += "{" + generate_game_with_winner(game_state, action_state, score_state, sample_answers[index]) + "}\n\n"
+
+    return prompt, sample_answers[random_index[-1]]
+
+def task_1_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
+    """
+    Tests each model's ability to evaluate a game of absurd soccer using the generate_prompt_1 function
+    - api_key: OpenRouter API Key
+    - game_state: determines how the game symbols (["player", "ball", "net"]) are arranged
+    - action_state: determines how the action symbols (["hits", "misses"]) are arranged
+    - comparator_state: determines how the comparator symbols (["most", "least"]) are arranged
+    - score_state: determines how the score symbols (["score", "point", "car", "ice-cream"]) are arranged
+    - models: either a list of model names from OpenRouter, or a string denoting a curated set of models
+        - "free": free models
+        - "cheap": $0.1-$0.2 per token
+        - "expensive": $0.5-$1 per token
+        - "reasoning": reasoning models that are $0.5-$1 per token
+    """
+
+    game_state, action_state, comparator_state, score_state = turn_ruleset_to_settings(ruleset)
+
+    if model_names == "all":
+        models = cheap_models + expensive_models + expensive_reasoning_models
+    elif model_names == "cheap":
+        models = cheap_models
+    elif model_names == "expensive":
+        models = expensive_models
+    elif model_names == "free":
+        models = free_models
+    elif model_names == "reasoning":
+        models = expensive_reasoning_models
+    elif type(model_names) is list:
+        models = model_names
+    else:
+        print("model_names variable must either be a specific string ('free', 'cheap', 'expensive', 'reasoning') or a list of model names")
+
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+
+    try:
+        df = pd.read_csv(file_name+'.csv')
+    except:
+        data = {
+            'game #': [],
+            'prompt': [],
+            'answer': [],
+        }
+
+        for model in models:
+            data[model + '_response'] = []
+            data[model + '_outcome'] = []
+    
+        df = pd.DataFrame(data)
+    
+    original_length = len(df)
+    if original_length > num_sims:
+        return
+
+    for i in range(num_sims-original_length):
+        new_row = {}
+        prompt, answer = generate_prompt_1_few_shot(game_state, action_state, comparator_state, score_state)
+        new_row['game #'] = [i+original_length]
+        new_row['prompt'] = [prompt]
+        new_row['answer'] = [answer]
+        print("Generating game", str(i+original_length))  
+        
+        for model in models:
+            if model == "thedrummer/valkyrie-49b-v1":
+                new_row[model + '_response'] = None
+                new_row[model + '_outcome'] = None
+                continue
+            print("Testing model:", model)
+            completion = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            while completion.choices == None or (completion.choices[0].message.content != None and re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()).lower() not in results):
+                completion = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                )
+            
+            new_row[model + '_response'] = [completion.choices[0].message.content]
+            new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())]
+
+        new_row = pd.DataFrame(new_row)
+        df = pd.concat([df, new_row])
+        save_results_to_file(df, file_name)
+
+    total_results = {}
+    new_row = {}
+    new_row['game #'] = ['total']
+    new_row['prompt'] = [None]
+    new_row['answer'] = [None]
+    for model in models:
+        total_results[model] = 0
+        for i in range(num_sims):
+            if type(list(df[model + '_outcome'])[i]) == str:
+                if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
+                    total_results[model] += 1
+        new_row[model + '_response'] = [None]
+        new_row[model + '_outcome'] = [total_results[model] / num_sims]
+
+    new_row = pd.DataFrame(new_row)
+    df = pd.concat([df, new_row])
+    save_results_to_file(df, file_name)
+
 def generate_empty_game(game_state: list, comparator_state: int):
     """
     Generates incomplete match commentary for a game of absurd soccer, where each team has 5 turns. Commentary is missing values for actions.
@@ -804,6 +937,9 @@ def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_n
     elif task == "FC":
         for i in range(num_sims):
             task_2(api_key, num_sims, ruleset, model_names, "fc_"+ruleset)
+    elif task == "DOFS":
+        for i in range(num_sims):
+            task_1_few_shot(api_key, num_sims, ruleset, model_names, "dofs_"+ruleset)
     elif task == "WC":
         for i in range(num_sims):
             task_2_alternate(api_key, num_sims, ruleset, model_names, "wc_"+ruleset)
@@ -828,7 +964,7 @@ def run_full_exp(folder_name, api_key, num_sims, model_names):
     if not os.path.exists(folder_name):
         os.mkdir(folder_name)
     os.chdir(folder_name)
-    all_tasks = ["DO", "FC", "WC", "WCFS"]
+    all_tasks = ["DO", "FC", "DOFS", "WC", "WCFS"]
     for t in all_tasks:
         run_all_rulesets(t, api_key, num_sims, model_names)
 
