@@ -251,7 +251,7 @@ def generate_prompt_1_few_shot(ruleset:str, prompts):
         prompt += "\n\n"
         prompt += "Answer:\n"
         if i != 3:
-            prompt += "{" + generate_game_with_winner(game_state, action_state, score_state, sample_answers[index]) + "}\n\n"
+            prompt += "{" + str(sample_answers[index]) + "}\n\n"
 
     return prompt, sample_answers[random_index[-1]]
 
