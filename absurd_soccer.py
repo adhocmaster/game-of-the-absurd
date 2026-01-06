@@ -39,8 +39,9 @@ expensive_models = ['anthropic/claude-3-5-haiku',
 expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
                               #'thedrummer/valkyrie-49b-v1',
                               #'mistralai/magistral-small-2506',
-                              'nvidia/llama-3.1-nemotron-ultra-253b-v1',
+                              'nvidia/llama-3.1-nemotron-ultra-253b-v1']
                               #'perplexity/sonar-reasoning']
+                             
 
 results = ['team a', 'team b', 'both teams']
 
