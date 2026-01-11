@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime
 import re
 import statistics
+import math
 
 game_symbols = ["player", "ball", "net"]
 action_symbols = ["hits", "misses"]
@@ -39,13 +40,20 @@ expensive_models = ['anthropic/claude-3-5-haiku',
 expensive_reasoning_models = ['deepseek/deepseek-r1-0528',
                               #'thedrummer/valkyrie-49b-v1',
                               #'mistralai/magistral-small-2506',
+                              # 'perplexity/sonar-reasoning',
                               'nvidia/llama-3.1-nemotron-ultra-253b-v1']
-                              #'perplexity/sonar-reasoning']
-                             
 
 results = ['team a', 'team b', 'both teams']
 
 worst_prompts = pd.read_csv("worst_prompts_alternate_task_2.csv")
+
+def calc_entropy(completion):
+    sum = 0
+    for token in completion.choices[0].logprobs.content:
+        logp = token.logprob
+        p = math.exp(logp)
+        sum += -p * logp
+    return sum
 
 def save_results_to_file(df, identifier):
     """
@@ -173,6 +181,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         for model in models:
             data[model + '_response'] = []
             data[model + '_outcome'] = []
+            data[model + '_entropy'] = []
     
         df = pd.DataFrame(data)
     
@@ -186,6 +195,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
         new_row['game #'] = [i+original_length]
         new_row['prompt'] = [prompt]
         new_row['answer'] = [answer]
+        
         print("Generating game", str(i+original_length))  
         
         for model in models:
@@ -216,6 +226,7 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             
             new_row[model + '_response'] = [completion.choices[0].message.content]
             new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())]
+            new_row[model + '_entropy'] = [calc_entropy(completion)]
 
         new_row = pd.DataFrame(new_row)
         df = pd.concat([df, new_row])
@@ -228,12 +239,16 @@ def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     new_row['answer'] = [None]
     for model in models:
         total_results[model] = 0
+        avg_entropy = 0
         for i in range(num_sims):
             if type(list(df[model + '_outcome'])[i]) == str:
                 if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                     total_results[model] += 1
+            avg_entropy += list(df[model+'_entropy'])[i]
+
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
+        new_row[model + '_entropy'] = [avg_entropy / num_sims]
 
     new_row = pd.DataFrame(new_row)
     df = pd.concat([df, new_row])
@@ -305,6 +320,7 @@ def task_1_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
         for model in models:
             data[model + '_response'] = []
             data[model + '_outcome'] = []
+            data[model + '_entropy'] = []
     
         df = pd.DataFrame(data)
     
@@ -349,6 +365,7 @@ def task_1_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
             
             new_row[model + '_response'] = [completion.choices[0].message.content]
             new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())]
+            new_row[model + '_entropy'] = [calc_entropy(completion)]
 
         new_row = pd.DataFrame(new_row)
         df = pd.concat([df, new_row])
@@ -360,13 +377,17 @@ def task_1_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
     new_row['prompt'] = [None]
     new_row['answer'] = [None]
     for model in models:
+        avg_entropy = 0
         total_results[model] = 0
         for i in range(num_sims):
             if type(list(df[model + '_outcome'])[i]) == str:
                 if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                     total_results[model] += 1
+            avg_entropy += list(df[model+'_entropy'])[i]
+
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
+        new_row[model + '_entropy'] = [avg_entropy / num_sims]
 
     new_row = pd.DataFrame(new_row)
     df = pd.concat([df, new_row])
@@ -454,6 +475,7 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
             data[model + '_response'] = []
             data[model + '_values'] = []
             data[model + '_outcome'] = []
+            data[model + '_entropy'] = []
         
         df = pd.DataFrame(data)
     
@@ -500,6 +522,7 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
                 missing_values = re.sub(r'[^a-zA-Z0-9,]+', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip().lower()).split(",")
             new_row[model + '_response'] = [completion.choices[0].message.content]
             new_row[model + '_values'] = [missing_values]
+            new_row[model + '_entropy'] = [calc_entropy(completion)]
             A_score = 0
             B_score = 0
             for j in range(len(missing_values)):
@@ -528,14 +551,18 @@ def task_2(api_key: str, num_sims: int, ruleset: str, model_names, file_name: st
     new_row['prompt'] = [None]
     new_row['answer'] = [None]
     for model in models:
+        avg_entropy = 0
         total_results[model] = 0
         for i in range(num_sims):
             if type(list(df[model + '_outcome'])[i]) == str:
                 if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                     total_results[model] += 1
+            avg_entropy += list(df[model+'_entropy'])[i]
+
         new_row[model + '_values'] = [None]
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
+        new_row[model + '_entropy'] = [avg_entropy / num_sims]
 
     new_row = pd.DataFrame(new_row)
     df = pd.concat([df, new_row])
@@ -607,6 +634,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
             data[model + '_response'] = []
             data[model + '_commentary'] = []
             data[model + '_outcome'] = []
+            data[model + '_entropy'] = []
             
         df = pd.DataFrame(data)
     
@@ -655,6 +683,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
                 commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
                 new_row[model + '_response'] = [completion.choices[0].message.content]
                 new_row[model + '_commentary'] = [commentary]
+                new_row[model + '_entropy'] = [calc_entropy(completion)]
                 lines = commentary.split("\n")
 
                 first_line = -1
@@ -726,11 +755,14 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
     new_row['answer'] = [None]
     #print(len(data['answer']))
     for model in models:
+        avg_entropy = 0
         total_results[model] = 0
         for i in range(num_sims):
             if type(list(df[model + '_outcome'])[i]) == str:
                 if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                     total_results[model] += 1
+            avg_entropy += list(df[model+'_entropy'])[i]
+        
         #print(model)
         new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
@@ -738,6 +770,7 @@ def task_2_alternate(api_key: str, num_sims: int, ruleset: str, model_names, fil
         #print(len(data[model + '_response']))
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
         #print(len(data[model + '_outcome']))
+        new_row[model + '_entropy'] = [avg_entropy / num_sims]
 
     new_row = pd.DataFrame(new_row)
     df = pd.concat([df, new_row])
@@ -803,6 +836,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
             data[model + '_response'] = []
             data[model + '_commentary'] = []
             data[model + '_outcome'] = []
+            data[model + '_entropy'] = []
             
         df = pd.DataFrame(data)
     
@@ -848,6 +882,7 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
             commentary = completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()
             new_row[model + '_response'] = [completion.choices[0].message.content]
             new_row[model + '_commentary'] = [commentary]
+            new_row[model + '_entropy'] = [calc_entropy(completion)]
             lines = commentary.split("\n")
 
             first_line = -1
@@ -913,11 +948,14 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
     new_row['answer'] = [None]
     #print(len(data['answer']))
     for model in models:
+        avg_entropy = 0
         total_results[model] = 0
         for i in range(num_sims):
             if type(list(df[model + '_outcome'])[i]) == str:
                 if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
                     total_results[model] += 1
+            avg_entropy += list(df[model+'_entropy'])[i]
+
         #print(model)
         new_row[model + '_commentary'] = [None]
         #print(len(data[model + '_commentary']))
@@ -925,7 +963,8 @@ def t2_alt_few_shot(api_key: str, num_sims: int, ruleset: str, model_names, file
         #print(len(data[model + '_response']))
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
         #print(len(data[model + '_outcome']))
-
+        new_row[model + '_entropy'] = [avg_entropy / num_sims]
+        
     new_row = pd.DataFrame(new_row)
     df = pd.concat([df, new_row])
     save_results_to_file(df, file_name)
@@ -992,11 +1031,3 @@ def get_worse_results(folder_name: str, tasks: list):
             worst_prompts.to_csv("worst_prompts_" + t + "_" + r + ".csv")
         os.chdir('..')
     os.chdir('..')
-
-
-
-            
-                
-
-
-
