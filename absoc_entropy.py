@@ -220,7 +220,7 @@ def task_1(openai_api_key: str, gemini_project_id: str, num_sims: int, ruleset: 
                 while completion.json()['choices'] == None or (completion.json()['choices'][0]['message']['content'] != None and re.sub(r'[^a-zA-Z0-9 ]', '', completion.json()['choices'][0]['message']['content'].split("{")[-1].split("}")[0].strip()).lower() not in results):
                     completion = openai_response(model, prompt, openai_api_key)
                 new_row[model + '_response'] = [completion.json()['choices'][0]['message']['content']]
-                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'].split("{")[-1].split("}")[0].strip())]
+                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'][0].split("{")[-1].split("}")[0].strip())]
                 new_row[model + '_entropy'] = [calc_openai_model_entropy(completion)]
 
             else:
@@ -228,7 +228,7 @@ def task_1(openai_api_key: str, gemini_project_id: str, num_sims: int, ruleset: 
                 while re.sub(r'[^a-zA-Z0-9 ]', '', completion.candidates[0].content.parts[0].text.split("{")[-1].split("}")[0].strip()).lower() not in results:
                     completion = gemini_response(model, prompt, gemini_project_id)
                 new_row[model + '_response'] = [completion.candidates[0].content.parts[0].text]
-                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'].split("{")[-1].split("}")[0].strip())]
+                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'][0].split("{")[-1].split("}")[0].strip())]
                 new_row[model + '_entropy'] = [calc_gemini_model_entropy(completion)]
             
         new_row = pd.DataFrame(new_row)
@@ -329,7 +329,7 @@ def task_1_few_shot(openai_api_key: str, gemini_project_id: str, num_sims: int, 
                 while completion.json()['choices'] == None or (completion.json()['choices'][0]['message']['content'] != None and re.sub(r'[^a-zA-Z0-9 ]', '', completion.json()['choices'][0]['message']['content'].split("{")[-1].split("}")[0].strip()).lower() not in results):
                     completion = openai_response(model, prompt, openai_api_key)
                 new_row[model + '_response'] = [completion.json()['choices'][0]['message']['content']]
-                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'].split("{")[-1].split("}")[0].strip())]
+                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'][0].split("{")[-1].split("}")[0].strip())]
                 new_row[model + '_entropy'] = [calc_openai_model_entropy(completion)]
 
             else:
@@ -337,7 +337,7 @@ def task_1_few_shot(openai_api_key: str, gemini_project_id: str, num_sims: int, 
                 while re.sub(r'[^a-zA-Z0-9 ]', '', completion.candidates[0].content.parts[0].text.split("{")[-1].split("}")[0].strip()).lower() not in results:
                     completion = gemini_response(model, prompt, gemini_project_id)
                 new_row[model + '_response'] = [completion.candidates[0].content.parts[0].text]
-                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'].split("{")[-1].split("}")[0].strip())]
+                new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', new_row[model + '_response'][0].split("{")[-1].split("}")[0].strip())]
                 new_row[model + '_entropy'] = [calc_gemini_model_entropy(completion)]
 
         new_row = pd.DataFrame(new_row)
@@ -418,3 +418,6 @@ def run_full_exp(folder_name, openai_api_key, gemini_project_id, num_sims):
         run_all_rulesets(t, openai_api_key, gemini_project_id, num_sims)
         if t == "DO":
             get_worse_results(t)
+            
+
+
