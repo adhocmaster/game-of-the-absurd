@@ -418,7 +418,3 @@ def run_full_exp(folder_name, openai_api_key, gemini_project_id, num_sims):
         run_all_rulesets(t, openai_api_key, gemini_project_id, num_sims)
         if t == "DO":
             get_worse_results(t)
-            
-
-
-
