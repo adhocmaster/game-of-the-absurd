@@ -405,6 +405,13 @@ def get_worse_results(tasks: list):
                 if scores[i] < statistics.median(scores):
                     worst_prompts[r].append(results["prompt"][i])
                     worst_prompts[r+"_answer"].append(results["answer"][i])
+            
+            if len(worst_prompts < 4):
+                for i in range(len(results)-1):
+                    if scores[i] == statistics.median(scores):
+                        worst_prompts[r].append(results["prompt"][i])
+                        worst_prompts[r+"_answer"].append(results["answer"][i])
+
             worst_prompts = pd.DataFrame(worst_prompts)
             worst_prompts.to_csv("worst_prompts_" + t + "_" + r + ".csv")
         os.chdir('..')
@@ -417,7 +424,10 @@ def run_full_exp(folder_name, openai_api_key, gemini_project_id, num_sims):
     for t in all_tasks:
         run_all_rulesets(t, openai_api_key, gemini_project_id, num_sims)
         if t == "DO":
+            print("GETTING WORST RESULTS")
             get_worse_results([t])
+            print("FINISHED GETTING WORST RESULTS")
+            
             
 
 
