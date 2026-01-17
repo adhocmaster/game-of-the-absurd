@@ -262,10 +262,7 @@ def generate_prompt_1_few_shot(ruleset:str, prompts):
     sample_prompts = [prompts[ruleset][i] for i in range(len(prompts[ruleset])) if type(prompts[ruleset][i]) is str and prompts[ruleset][i].startswith("Absurd")]
     sample_answers = [prompts[ruleset+"_answer"][i] for i in range(len(prompts[ruleset])) if type(prompts[ruleset][i]) is str and prompts[ruleset][i].startswith("Absurd")]
     #print(sample_answers)
-    if len(sample_prompts) >= 4:
-        random_index = random.sample(range(0, len(sample_prompts)), 4)
-    else:
-        random_index = [random.randint(1, len(sample_prompts)) for i in range(4)]
+    random_index = random.sample(range(0, len(sample_prompts)), 4)
     
     prompt = ""
     for i, index in enumerate(random_index):
@@ -406,7 +403,7 @@ def get_worse_results(tasks: list):
                         count += 1
                 scores.append(count)
             for i in range(len(results)-1):
-                if scores[i] < statistics.median(scores):
+                if scores[i] <= statistics.median(scores):
                     worst_prompts[r].append(results["prompt"][i])
                     worst_prompts[r+"_answer"].append(results["answer"][i])
 
