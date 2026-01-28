@@ -121,7 +121,7 @@ def generate_prompt_1(game_state: list, action_state: int, comparator_state: int
     prompt += "Here is the match commentary for a game of absurd soccer:\n\n"
     game, answer = generate_game(game_state, action_state, comparator_state)
     prompt += game
-    prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both teams' if both teams wins. Please work out your reasoning process for the answer, and place your answer within two curly brackets (ex. {team A})."
+    prompt += "\nWho won the game? Answer 'team A' if team A wins, 'team B' if team B wins, and 'both teams' if both teams win. Please work out your reasoning process for the answer, and place your answer within two curly brackets (ex. {team A})."
     return prompt, answer
 
 def task_1(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
@@ -967,18 +967,10 @@ def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
     
     os.chdir('..')
 
-def run_full_exp(folder_name, api_key, num_sims, model_names):
-    if not os.path.exists(folder_name):
-        os.mkdir(folder_name)
-    os.chdir(folder_name)
-    all_tasks = ["DO", "FC", "DOFS", "WC", "WCFS"]
-    for t in all_tasks:
-        run_all_rulesets(t, api_key, num_sims, model_names)
-
-def get_worse_results(folder_name: str, tasks: list):
+def get_worse_results(tasks: list, few_shot_tasks: list):
     rulesets = ["Car", "Default", "Ice Cream", "Less", "Miss", "Miss Switch", "Switch"]
-    os.chdir(folder_name)
-    for t in tasks:
+    for t, fst in zip(tasks, few_shot_tasks):
+        os.mkdir(fst)
         os.chdir(t)
         for r in rulesets:
             worst_prompts = {r: [], r+"_answer": []}
@@ -996,5 +988,18 @@ def get_worse_results(folder_name: str, tasks: list):
                     worst_prompts[r+"_answer"].append(results["answer"][i])
             worst_prompts = pd.DataFrame(worst_prompts)
             worst_prompts.to_csv("worst_prompts_" + t + "_" + r + ".csv")
+            os.chdir('..')
+            os.rename(t+"/worst_prompts_" + t + "_" + r + ".csv", fst+"/worst_prompts_" + t + "_" + r + ".csv")
+            os.chdir(t)
         os.chdir('..')
-    os.chdir('..')
+
+def run_full_exp(folder_name, api_key, num_sims, model_names):
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
+    os.chdir(folder_name)
+    all_tasks = ["DO", "DOFS"]
+    for t in all_tasks:
+        run_all_rulesets(t, api_key, num_sims, model_names)
+        if t == "DO":
+            get_worse_results([t], ["DOFS"])
+        
