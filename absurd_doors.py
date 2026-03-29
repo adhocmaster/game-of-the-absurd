@@ -9,7 +9,7 @@ import math
 
 default_model_list = ['anthropic/claude-opus-4.6',
                'anthropic/claude-sonnet-4.6',
-               'x-ai/grok-4.1-fast',
+               #'x-ai/grok-4.1-fast',
                'google/gemini-3-flash-preview',
                'openai/gpt-5.4',
                'deepseek/deepseek-v3.2',
