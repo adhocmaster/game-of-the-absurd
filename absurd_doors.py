@@ -101,7 +101,7 @@ def generate_events_task(api_key: str, num_sims: int, ruleset: str, model_names,
             outcome = random.randint(1,3)
 
 
-        prompt = f"Five players, numbered 1 through 5, play a game. In front of them are five unopened doors, numbered 1 through 5. Doors 1, 3, and 5 have a {prize_symbol} behind it. Doors 2 and 4 do not. Player 1 chooses an unopened door and opens it. Then, player 2 chooses a door that has not been opened and opens it. Players 3, 4, and 5 do the same, in that order. Once all five players have finished opening the doors, the player who wins the game is the one who opened a door with a goat behind it first. \n\n Your task is to come up with a list of numbers a_1, a_2, a_3, a_4, a_5, such that if player 1 opens door a_1, player 2 opens door a_2, . . . , and player 5 opens door a_5, then player {outcome} wins. Note that a_1, a_2, a_3, a_4, a_5 must all be different from each other and that a_n must be a number between 1 and 5. Please work out your reasoning process for the answer, and format the list within brackets (ex. {{3,1,2,5,4}})"
+        prompt = f"Five players, numbered 1 through 5, play a game. In front of them are five unopened doors, numbered 1 through 5. Doors 1, 3, and 5 have a {prize_symbol} behind it. Doors 2 and 4 do not. Player 1 chooses an unopened door and opens it. Then, player 2 chooses a door that has not been opened and opens it. Players 3, 4, and 5 do the same, in that order. Once all five players have finished opening the doors, the player who wins the game is the one who opened a door with a {prize_symbol} behind it first. \n\n Your task is to come up with a list of numbers a_1, a_2, a_3, a_4, a_5, such that if player 1 opens door a_1, player 2 opens door a_2, . . . , and player 5 opens door a_5, then player {outcome} wins. Note that a_1, a_2, a_3, a_4, a_5 must all be different from each other and that a_n must be a number between 1 and 5. Please work out your reasoning process for the answer, and format the list within brackets (ex. {{3,1,2,5,4}})"
         
         new_row['game #'] = [i+original_length]
         new_row['prompt'] = [prompt]
@@ -142,12 +142,14 @@ def generate_events_task(api_key: str, num_sims: int, ruleset: str, model_names,
             winner = -1
             if order_symbol == "last":
                 for i in range(5):
-                    if int(list_of_nums[i].strip()) in [1, 3, 5]:
-                        winner = int(list_of_nums[4-i].strip())
+                    if int(list_of_nums[4-i].strip()) in [1, 3, 5]:
+                        winner = int(5-i)
+                        break
             else:
                 for i in range(5):
                     if int(list_of_nums[i].strip()) in [1, 3, 5]:
-                        winner = int(list_of_nums[i].strip())
+                        winner = int(i+1)
+                        break
 
             new_row[model + '_response'] = [completion.choices[0].message.content]
             new_row[model + '_values'] = [list_of_nums]
