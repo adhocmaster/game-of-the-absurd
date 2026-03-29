@@ -167,9 +167,8 @@ def generate_events_task(api_key: str, num_sims: int, ruleset: str, model_names,
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if type(list(df[model + '_outcome'])[i]) == str:
-                if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
-                    total_results[model] += 1
+            if list(df['answer'])[i] == list(df[model + '_outcome'])[i]:
+                total_results[model] += 1
 
         new_row[model + '_values'] = [None]
         new_row[model + '_response'] = [None]
