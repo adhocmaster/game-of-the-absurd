@@ -19,7 +19,6 @@ default_model_list = ['anthropic/claude-opus-4.6',
                'google/gemini-2.5-flash',
                'xiaomi/mimo-v2-omni',
                'moonshotai/kimi-k2.5',
-               'openai/gpt-oss-120b',
                'google/gemini-3.1-flash-lite-preview',
                'openai/gpt-4o-mini',
                'xiaomi/mimo-v2-flash',
@@ -30,8 +29,7 @@ default_model_list = ['anthropic/claude-opus-4.6',
                'openai/gpt-5.4-nano',
                'deepseek/deepseek-chat-v3-0324',
                'mistralai/mistral-nemo',
-               'openai/gpt-5-nano',
-               'openai/gpt-oss-20b']
+               'openai/gpt-5-nano']
 
 def save_results_to_file(df, identifier):
     """
