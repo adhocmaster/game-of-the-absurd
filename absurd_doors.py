@@ -400,6 +400,6 @@ def run_full_exp(folder_name, api_key, num_sims, model_names):
         os.mkdir(folder_name)
     os.chdir(folder_name)
 
-    all_tasks = ["DO_RANDOM"]
+    all_tasks = ["DO_RANDOM", "DO_ORDER", "DO_ORDER_NO_WIN"]
     for t in all_tasks:
         run_all_rulesets(t, api_key, num_sims, model_names)
