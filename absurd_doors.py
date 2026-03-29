@@ -23,7 +23,7 @@ default_model_list = ['anthropic/claude-opus-4.6',
                'openai/gpt-4o-mini',
                'xiaomi/mimo-v2-flash',
                'openai/gpt-5-mini',
-               'x-ai/grok-4-fast',
+               #'x-ai/grok-4-fast',
                'qwen/qwen3-235b-a22b-2507',
                'openai/gpt-4.1-mini',
                'openai/gpt-5.4-nano',
@@ -206,7 +206,7 @@ def do_order(api_key: str, num_sims: int, ruleset: str, model_names, file_name: 
         outcome = 'none'
         for j in range(3):
             if pick_event[j][1] in [1, 3]:
-                outcome = pick_event[j][1]
+                outcome = pick_event[j][0]
                 break
 
 
@@ -311,7 +311,7 @@ def do_order_no_win(api_key: str, num_sims: int, ruleset: str, model_names, file
         outcome = 'none'
         for j in range(3):
             if pick_event[j][1] in [1, 3]:
-                outcome = pick_event[j][1]
+                outcome = pick_event[j][0]
                 break
 
 
