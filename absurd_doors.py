@@ -142,11 +142,11 @@ def generate_events_task(api_key: str, num_sims: int, ruleset: str, model_names,
             winner = -1
             if order_symbol == "last":
                 for i in range(5):
-                    if list_of_nums[i] in [1, 3, 5]:
+                    if int(list_of_nums[i].strip()) in [1, 3, 5]:
                         winner = int(list_of_nums[4-i].strip())
             else:
                 for i in range(5):
-                    if list_of_nums[i] in [1, 3, 5]:
+                    if int(list_of_nums[i].strip()) in [1, 3, 5]:
                         winner = int(list_of_nums[i].strip())
 
             new_row[model + '_response'] = [completion.choices[0].message.content]
