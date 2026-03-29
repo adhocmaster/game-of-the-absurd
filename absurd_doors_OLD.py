@@ -7,6 +7,9 @@ import re
 import statistics
 import math
 
+prize_symbols = ["goat", "cow"]
+order_symbols = ["first", "last"]
+
 default_model_list = ['anthropic/claude-opus-4.6',
                'anthropic/claude-sonnet-4.6',
                'x-ai/grok-4.1-fast',
@@ -34,19 +37,29 @@ default_model_list = ['anthropic/claude-opus-4.6',
                'openai/gpt-oss-20b']
 
 def save_results_to_file(df, identifier):
-    """
-    Saves results dataframe to a csv file
-    - df: DataFrame that should be saved
-    - identifier: keyword or identifier that file should be named with
-    """
-
     try:
         os.remove("./"+identifier + '.csv')
     except:
         pass
     df.to_csv(identifier + '.csv', index=False)
 
-def do_random(api_key: str, num_sims: int, model_names, file_name: str):
+def turn_ruleset_to_settings(ruleset: str):
+    prize_symbol = "goat"
+    order_symbol = "first"
+
+    if ruleset not in ["REAL", "COW", "LAST"]:
+        quit()
+    
+    if ruleset == "COW":
+        prize_symbol = "cow"
+    if ruleset == "LAST":
+        order_symbol = "last"
+    
+    return prize_symbol, order_symbol
+
+def generate_events_task(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
+    prize_symbol, order_symbol = turn_ruleset_to_settings(ruleset)
+
     if model_names == "default":
         models = default_model_list
     elif type(model_names) is list:
@@ -71,6 +84,7 @@ def do_random(api_key: str, num_sims: int, model_names, file_name: str):
 
         for model in models:
             data[model + '_response'] = []
+            data[model + '_values'] = []
             data[model + '_outcome'] = []
     
         df = pd.DataFrame(data)
@@ -78,22 +92,17 @@ def do_random(api_key: str, num_sims: int, model_names, file_name: str):
     original_length = len(df)
     if original_length > num_sims:
         return
-
+    
     for i in range(num_sims-original_length):
-        random_players = random.sample(['A','C','D'],3)
-        random_doors = random.sample([1,2,3,4,5],3)
-        
-        outcome = 'none'
-        for j in range(3):
-            if random_doors[j] in [1, 3]:
-                outcome = random_players[j]
-                break
-
-
         new_row = {}
+        if order_symbol == "last":
+            outcome = random.randint(3,5)
+        else:
+            outcome = random.randint(1,3)
 
-        prompt = f"Three players (player A, player C, player D) play the following game: in front of them are five unopened doors, numbered 1 through 5. Doors 1 and 3 have a goat behind it. Doors 2, 4, and 5 do not. The players then open the doors in some order, and the player which opens a door with a goat behind it first wins the game. If no player opens a door with a goat behind it, no one wins.\n\nSuppose The three players open some of the doors in the following order:\n\nPlayer {random_players[0]} opens door {random_doors[0]}\nPlayer {random_players[1]} opens door {random_doors[1]}\nPlayer {random_players[2]} opens door {random_doors[2]}\n\nYour task is to determine who the winner of this game is. Answer 'A' if player A wins, 'C' if player C wins, 'D' if player D wins, and 'none' if no players win. Please work out your reasoning process for the answer, and place your answer within two curly brackets (ex. {{A}})." 
 
+        prompt = f"Five players, numbered 1 through 5, play a game. In front of them are five unopened doors, numbered 1 through 5. Doors 1, 3, and 5 have a {prize_symbol} behind it. Doors 2 and 4 do not. Player 1 chooses an unopened door and opens it. Then, player 2 chooses a door that has not been opened and opens it. Players 3, 4, and 5 do the same, in that order. Once all five players have finished opening the doors, the player who wins the game is the one who opened a door with a {prize_symbol} behind it first. \n\n Your task is to come up with a list of numbers a_1, a_2, a_3, a_4, a_5, such that if player 1 opens door a_1, player 2 opens door a_2, . . . , and player 5 opens door a_5, then player {outcome} wins. Note that a_1, a_2, a_3, a_4, a_5 must all be different from each other and that a_n must be a number between 1 and 5. Please work out your reasoning process for the answer, and format the list within brackets (ex. {{3,1,2,5,4}})"
+        
         new_row['game #'] = [i+original_length]
         new_row['prompt'] = [prompt]
         new_row['answer'] = [outcome]
@@ -111,7 +120,14 @@ def do_random(api_key: str, num_sims: int, model_names, file_name: str):
                     }
                 ]
             )
-            while completion.choices == None or (completion.choices[0].message.content != None and re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip()).lower() not in ['a','c','d','none']):
+
+            list_of_nums = re.sub(r'[^a-zA-Z0-9,]+', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip().lower()).split(",")
+
+            all_5 = False
+            if (x in list_of_nums for x in [1, 2, 3, 4, 5]):
+                all_5 = True
+
+            while completion.choices == None or len(list_of_nums) != 5 or not all_5:
                 completion = client.chat.completions.create(
                     model=model,
                     messages=[
@@ -121,27 +137,40 @@ def do_random(api_key: str, num_sims: int, model_names, file_name: str):
                         }
                     ]
                 )
+                list_of_nums = re.sub(r'[^a-zA-Z0-9,]+', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip().lower()).split(",")
             
-            new_row[model + '_response'] = [completion.choices[0].message.content]
-            new_row[model + '_outcome'] = [re.sub(r'[^a-zA-Z0-9 ]', '', completion.choices[0].message.content.split("{")[-1].split("}")[0].strip())]
+            winner = -1
+            if order_symbol == "last":
+                for i in range(5):
+                    if int(list_of_nums[4-i].strip()) in [1, 3, 5]:
+                        winner = int(5-i)
+                        break
+            else:
+                for i in range(5):
+                    if int(list_of_nums[i].strip()) in [1, 3, 5]:
+                        winner = int(i+1)
+                        break
 
+            new_row[model + '_response'] = [completion.choices[0].message.content]
+            new_row[model + '_values'] = [list_of_nums]
+            new_row[model + '_outcome'] = [winner]
+        
         new_row = pd.DataFrame(new_row)
         df = pd.concat([df, new_row])
         save_results_to_file(df, file_name)
-
+    
     total_results = {}
     new_row = {}
     new_row['game #'] = ['total']
     new_row['prompt'] = [None]
     new_row['answer'] = [None]
-
     for model in models:
         total_results[model] = 0
         for i in range(num_sims):
-            if type(list(df[model + '_outcome'])[i]) == str:
-                if list(df['answer'])[i].lower() == list(df[model + '_outcome'])[i].lower():
-                    total_results[model] += 1
+            if list(df['answer'])[i] == list(df[model + '_outcome'])[i]:
+                total_results[model] += 1
 
+        new_row[model + '_values'] = [None]
         new_row[model + '_response'] = [None]
         new_row[model + '_outcome'] = [total_results[model] / num_sims]
 
@@ -149,30 +178,21 @@ def do_random(api_key: str, num_sims: int, model_names, file_name: str):
     df = pd.concat([df, new_row])
     save_results_to_file(df, file_name)
 
-def do_order(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
-    return
-
-def do_order_no_win(api_key: str, num_sims: int, ruleset: str, model_names, file_name: str):
-    return
-
 def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_names):
-    if task == "DO_RANDOM":
+    if task == "GE":
         for i in range(num_sims):
-            do_random(api_key, num_sims, model_names, "do_random")
-    elif task == "DO_ORDER":
-        for i in range(num_sims):
-            do_order(api_key, num_sims, ruleset, model_names, "do_order")
-    elif task == "DO_ORDER_NO_WIN":
-        for i in range(num_sims):
-            do_order_no_win(api_key, ruleset, num_sims, model_names, "do_order")
+            generate_events_task(api_key, num_sims, ruleset, model_names, "ge_"+ruleset)
 
 def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
+    all_rulesets = ["REAL", "COW", "LAST"]
+
     if not os.path.exists(task):
         os.mkdir(task)
 
     os.chdir(task)
 
-    run_all_models(task, api_key, num_sims, "", model_names)
+    for r in all_rulesets:
+        run_all_models(task, api_key, num_sims, r, model_names)
     
     os.chdir('..')
 
@@ -180,7 +200,6 @@ def run_full_exp(folder_name, api_key, num_sims, model_names):
     if not os.path.exists(folder_name):
         os.mkdir(folder_name)
     os.chdir(folder_name)
-
-    all_tasks = ["DO_RANDOM"]
+    all_tasks = ["GE"]
     for t in all_tasks:
         run_all_rulesets(t, api_key, num_sims, model_names)
