@@ -492,7 +492,6 @@ def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_n
         for i in range(num_sims):
             do_order_no_win(api_key, num_sims, ruleset, model_names, "do_random_last")
 
-
 def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
     if not os.path.exists(task):
         os.mkdir(task)
