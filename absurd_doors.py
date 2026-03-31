@@ -490,7 +490,7 @@ def run_all_models(task: str, api_key: str, num_sims: int, ruleset: str, model_n
             do_order_no_win(api_key, num_sims, ruleset, model_names, "do_order")
     elif task == "DO_RANDOM_LAST":
         for i in range(num_sims):
-            do_order_no_win(api_key, num_sims, ruleset, model_names, "do_random_last")
+            do_random_last(api_key, num_sims, model_names, "do_random_last")
 
 def run_all_rulesets(task: str, api_key: str, num_sims: int, model_names):
     if not os.path.exists(task):
